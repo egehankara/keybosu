@@ -24,10 +24,19 @@ namespace osu.Game.Rulesets.Keyboard.Beatmaps
         private const float osu_height = 384;
 
         /// <summary>
-        /// Two objects closer together than this (in ms) are never put on the same key,
-        /// otherwise their filling squares would overlap in a single cell.
+        /// Extra time after a note before the next note on the same key may start filling: covers the late
+        /// hit window and the hit animation, so the key is completely empty again.
         /// </summary>
+        private const double same_key_clearance = 200;
+
+        /// <summary>Never closer than this, even on maps with a very high approach rate.</summary>
         private const double min_same_key_gap = 350;
+
+        /// <summary>
+        /// Two notes on the same key closer together than this (in ms) would be on screen at the same time,
+        /// one square growing inside the other. Worked out from the map's approach rate on first use.
+        /// </summary>
+        private double? sameKeyGap;
 
         private readonly KeyboardLayout layout = KeyboardLayout.Default;
         private readonly Dictionary<KeyboardAction, SortedSet<double>> usedTimes = new Dictionary<KeyboardAction, SortedSet<double>>();
@@ -41,6 +50,10 @@ namespace osu.Game.Rulesets.Keyboard.Beatmaps
 
         protected override IEnumerable<KeyboardHitObject> ConvertHitObject(HitObject original, IBeatmap beatmap, CancellationToken cancellationToken)
         {
+            // A note starts filling TimePreempt before it is due (same formula as KeyboardHitObject).
+            sameKeyGap ??= Math.Max(min_same_key_gap,
+                IBeatmapDifficultyInfo.DifficultyRange(beatmap.Difficulty.ApproachRate, 1800, 1200, 450) + same_key_clearance);
+
             var random = new Random((int)original.StartTime);
 
             bool hasPosition = original is IHasPosition;
@@ -117,7 +130,8 @@ namespace osu.Game.Rulesets.Keyboard.Beatmaps
             if (!usedTimes.TryGetValue(action, out var set))
                 return true;
 
-            return set.GetViewBetween(time - min_same_key_gap, time + min_same_key_gap).Count == 0;
+            double gap = sameKeyGap ?? min_same_key_gap;
+            return set.GetViewBetween(time - gap, time + gap).Count == 0;
         }
 
         private static IList<HitSampleInfo> nodeSamples(HitObject original, bool head)

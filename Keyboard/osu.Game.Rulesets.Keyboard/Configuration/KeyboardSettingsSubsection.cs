@@ -35,6 +35,24 @@ namespace osu.Game.Rulesets.Keyboard.Configuration
                     TooltipText = KeyboardStrings.KeyboardTypeTooltip,
                     Current = config.GetBindable<KeyboardType>(KeyboardRulesetSetting.KeyboardType),
                 },
+                new SettingsCheckbox
+                {
+                    LabelText = KeyboardStrings.HighlightHomeRow,
+                    TooltipText = KeyboardStrings.HighlightHomeRowTooltip,
+                    Current = config.GetBindable<bool>(KeyboardRulesetSetting.HighlightHomeRow),
+                },
+                new SettingsCheckbox
+                {
+                    LabelText = KeyboardStrings.ShowJudgements,
+                    TooltipText = KeyboardStrings.ShowJudgementsTooltip,
+                    Current = config.GetBindable<bool>(KeyboardRulesetSetting.ShowJudgements),
+                },
+                new SettingsEnumDropdown<KeyboardCentring>
+                {
+                    LabelText = KeyboardStrings.ScreenCentre,
+                    TooltipText = KeyboardStrings.ScreenCentreTooltip,
+                    Current = config.GetBindable<KeyboardCentring>(KeyboardRulesetSetting.Centring),
+                },
             };
         }
     }

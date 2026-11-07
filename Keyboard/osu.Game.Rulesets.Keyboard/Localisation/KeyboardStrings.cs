@@ -36,6 +36,17 @@ namespace osu.Game.Rulesets.Keyboard.Localisation
         public static LocalisableString LayoutDvorak => get(nameof(LayoutDvorak));
         public static LocalisableString LayoutColemak => get(nameof(LayoutColemak));
 
+        public static LocalisableString HighlightHomeRow => get(nameof(HighlightHomeRow));
+        public static LocalisableString HighlightHomeRowTooltip => get(nameof(HighlightHomeRowTooltip));
+        public static LocalisableString ScreenCentre => get(nameof(ScreenCentre));
+        public static LocalisableString ScreenCentreTooltip => get(nameof(ScreenCentreTooltip));
+        public static LocalisableString CentreWholeKeyboard => get(nameof(CentreWholeKeyboard));
+        public static LocalisableString CentreSpaceBar => get(nameof(CentreSpaceBar));
+        public static LocalisableString CentreBetweenGAndH => get(nameof(CentreBetweenGAndH));
+
+        public static LocalisableString ShowJudgements => get(nameof(ShowJudgements));
+        public static LocalisableString ShowJudgementsTooltip => get(nameof(ShowJudgementsTooltip));
+
         // On the playfield
         public static LocalisableString KeyEnter => get(nameof(KeyEnter));
         public static LocalisableString KeySpace => get(nameof(KeySpace));
@@ -79,6 +90,60 @@ namespace osu.Game.Rulesets.Keyboard.Localisation
             [nameof(TypeIso)] = new[]
             {
                 "ISO (Turkish / European) - tall Enter", "ISO (Türkçe / Avrupa) - uzun Enter", "ISO (Europa) - hohe Enter-Taste", "ISO (Europa) - Intro alto", "ISO (Europe) - Entrée haute", "ISO（欧州）- 縦長Enter", "ISO (Европа) — высокий Enter",
+            },
+            [nameof(HighlightHomeRow)] = new[]
+            {
+                "Highlight home row keys", "Temel sıra tuşlarını vurgula", "Grundreihe hervorheben", "Resaltar la fila guía", "Mettre en évidence la rangée de repos", "ホームポジションを強調", "Подсвечивать основной ряд",
+            },
+            [nameof(HighlightHomeRowTooltip)] = new[]
+            {
+                "Makes the eight home row keys where your fingers rest stand out, with bumps on the two index-finger keys like a real keyboard. Applies the next time a map starts.",
+                "Parmaklarının durduğu ana sıradaki 8 tuşu belirginleştirir; gerçek klavyedeki gibi iki işaret parmağı tuşunda çıkıntı çizgisi olur. Bir sonraki harita başladığında uygulanır.",
+                "Hebt die acht Tasten der Grundreihe hervor, auf denen deine Finger ruhen, mit Markierungen auf den beiden Zeigefinger-Tasten wie bei einer echten Tastatur. Gilt ab der nächsten Map.",
+                "Resalta las ocho teclas de la fila guía donde descansan tus dedos, con marcas en las dos teclas de los índices como en un teclado real. Se aplica al empezar el siguiente mapa.",
+                "Met en évidence les huit touches de la rangée de repos où reposent vos doigts, avec des repères sur les deux touches des index comme sur un vrai clavier. S'applique au début de la prochaine map.",
+                "指を置くホームポジションの8つのキーを目立たせ、実際のキーボードのように人差し指の2つのキーに突起を表示します。次の譜面の開始時に適用されます。",
+                "Выделяет восемь клавиш основного ряда, на которых лежат пальцы, с метками на двух клавишах указательных пальцев, как на настоящей клавиатуре. Применяется со следующей карты.",
+            },
+            [nameof(ShowJudgements)] = new[]
+            {
+                "Show judgements", "İsabet derecelerini göster", "Bewertungen anzeigen", "Mostrar valoraciones", "Afficher les jugements", "判定を表示", "Показывать оценки попаданий",
+            },
+            [nameof(ShowJudgementsTooltip)] = new[]
+            {
+                "Shows Perfect, Great, Miss and so on, small, under the letter of the key you hit. Uses your skin's own judgement graphics. Applies the next time a map starts.",
+                "Bastığın tuşun harfinin altında küçükçe Perfect, Great, Miss gibi dereceleri gösterir. Skin'inin kendi derece görsellerini kullanır. Bir sonraki harita başladığında uygulanır.",
+                "Zeigt Perfect, Great, Miss usw. klein unter dem Buchstaben der getroffenen Taste. Verwendet die Bewertungsgrafiken deines Skins. Gilt ab der nächsten Map.",
+                "Muestra Perfect, Great, Miss, etc. en pequeño bajo la letra de la tecla pulsada. Usa los gráficos de valoración de tu skin. Se aplica al empezar el siguiente mapa.",
+                "Affiche Perfect, Great, Miss, etc. en petit sous la lettre de la touche frappée. Utilise les graphismes de jugement de votre skin. S'applique au début de la prochaine map.",
+                "押したキーの文字の下に Perfect、Great、Miss などを小さく表示します。スキンの判定画像を使います。次の譜面の開始時に適用されます。",
+                "Показывает Perfect, Great, Miss и т. д. мелко под буквой нажатой клавиши. Использует графику оценок из вашего скина. Применяется со следующей карты.",
+            },
+            [nameof(ScreenCentre)] = new[]
+            {
+                "Screen centre", "Ekran merkezi", "Bildschirmmitte", "Centro de la pantalla", "Centre de l'écran", "画面の中心", "Центр экрана",
+            },
+            [nameof(ScreenCentreTooltip)] = new[]
+            {
+                "Which part of the keyboard sits exactly in the middle of the screen. Applies the next time a map starts.",
+                "Klavyenin hangi kısmının ekranın tam ortasında duracağı. Bir sonraki harita başladığında uygulanır.",
+                "Welcher Teil der Tastatur genau in der Bildschirmmitte liegt. Gilt ab der nächsten Map.",
+                "Qué parte del teclado queda justo en el centro de la pantalla. Se aplica al empezar el siguiente mapa.",
+                "Quelle partie du clavier se trouve exactement au centre de l'écran. S'applique au début de la prochaine map.",
+                "キーボードのどの部分を画面の中央に置くか。次の譜面の開始時に適用されます。",
+                "Какая часть клавиатуры находится точно в центре экрана. Применяется со следующей карты.",
+            },
+            [nameof(CentreWholeKeyboard)] = new[]
+            {
+                "Whole keyboard", "Tüm klavye", "Ganze Tastatur", "Todo el teclado", "Tout le clavier", "キーボード全体", "Вся клавиатура",
+            },
+            [nameof(CentreSpaceBar)] = new[]
+            {
+                "Space bar", "Boşluk tuşu", "Leertaste", "Barra espaciadora", "Barre d'espace", "スペースキー", "Пробел",
+            },
+            [nameof(CentreBetweenGAndH)] = new[]
+            {
+                "Between G and H", "G ile H arası", "Zwischen G und H", "Entre G y H", "Entre G et H", "GとHの間", "Между G и H",
             },
             [nameof(LayoutEnglishQwerty)] = new[]
             {

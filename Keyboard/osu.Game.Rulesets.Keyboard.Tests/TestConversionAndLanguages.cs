@@ -58,6 +58,44 @@ namespace osu.Game.Rulesets.Keyboard.Tests
             Assert.That(convert(notes).HitObjects.Count(h => h.Key == KeyboardAction.Space), Is.Zero);
         }
 
+        [TestCase(3f)]
+        [TestCase(5f)]
+        [TestCase(9f)]
+        public void TestTwoNotesOnOneKeyAreNeverOnScreenTogether(float approachRate)
+        {
+            // Worst case: a fast stream all on the same spot, which always wants the same key.
+            var source = new Beatmap<HitObject>();
+            source.Difficulty.ApproachRate = approachRate;
+            for (int i = 0; i < 400; i++)
+                source.HitObjects.Add(new FakeCircle { StartTime = 1000 + i * 100, Position = new Vector2(256, 192) });
+
+            var converted = (Beatmap<KeyboardHitObject>)new KeyboardBeatmapConverter(source, new KeyboardRuleset()).Convert();
+            foreach (var h in converted.HitObjects)
+                h.ApplyDefaults(new osu.Game.Beatmaps.ControlPoints.ControlPointInfo(), source.Difficulty);
+
+            foreach (var group in converted.HitObjects.GroupBy(h => h.Key))
+            {
+                var notes = group.OrderBy(h => h.StartTime).ToList();
+
+                for (int i = 1; i < notes.Count; i++)
+                {
+                    // The next square may only start growing once the previous note's late window (136ms at OD5) is over.
+                    double nextStartsFilling = notes[i].StartTime - notes[i].TimePreempt;
+                    Assert.That(nextStartsFilling, Is.GreaterThanOrEqualTo(notes[i - 1].StartTime + 150),
+                        $"AR{approachRate}: two notes on {group.Key} at {notes[i - 1].StartTime} and {notes[i].StartTime} overlap on screen");
+                }
+            }
+        }
+
+        [Test]
+        public void TestPerfectIsWorthMoreThanGreat()
+        {
+            var scoring = new KeyboardRuleset().CreateScoreProcessor();
+            Assert.That(scoring.GetBaseScoreForResult(osu.Game.Rulesets.Scoring.HitResult.Perfect), Is.EqualTo(305));
+            Assert.That(scoring.GetBaseScoreForResult(osu.Game.Rulesets.Scoring.HitResult.Great), Is.EqualTo(300));
+            Assert.That(scoring.GetBaseScoreForResult(osu.Game.Rulesets.Scoring.HitResult.Good), Is.EqualTo(200));
+        }
+
         [Test]
         public void TestEveryTextIsTranslatedIntoEveryLanguage()
         {

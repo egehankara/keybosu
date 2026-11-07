@@ -165,6 +165,22 @@ namespace osu.Game.Rulesets.Keyboard
 
         public KeyDefinition this[KeyboardAction action] => byAction[action];
 
+        /// <summary>
+        /// The eight keys fingers rest on, by physical position (so it is right in every layout,
+        /// e.g. "Ş" on Turkish Q or "U İ E A" on Turkish F).
+        /// </summary>
+        public static readonly IReadOnlyCollection<KeyboardAction> HOME_ROW = new HashSet<KeyboardAction>
+        {
+            KeyboardAction.A, KeyboardAction.S, KeyboardAction.D, KeyboardAction.F,
+            KeyboardAction.J, KeyboardAction.K, KeyboardAction.L, KeyboardAction.Semicolon,
+        };
+
+        /// <summary>The two index-finger keys that have a bump on a real keyboard.</summary>
+        public static readonly IReadOnlyCollection<KeyboardAction> INDEX_FINGER_BUMPS = new HashSet<KeyboardAction>
+        {
+            KeyboardAction.F, KeyboardAction.J,
+        };
+
         public bool Contains(KeyboardAction action) => byAction.ContainsKey(action);
 
         /// <summary>

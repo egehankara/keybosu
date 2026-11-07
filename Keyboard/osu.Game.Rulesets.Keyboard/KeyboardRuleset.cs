@@ -18,8 +18,10 @@ using osu.Game.Rulesets.Difficulty;
 using osu.Game.Rulesets.Keyboard.Beatmaps;
 using osu.Game.Rulesets.Keyboard.Configuration;
 using osu.Game.Rulesets.Keyboard.Mods;
+using osu.Game.Rulesets.Keyboard.Scoring;
 using osu.Game.Rulesets.Keyboard.UI;
 using osu.Game.Rulesets.Mods;
+using osu.Game.Rulesets.Scoring;
 using osu.Game.Rulesets.UI;
 using osuTK;
 using osuTK.Graphics;
@@ -32,6 +34,8 @@ namespace osu.Game.Rulesets.Keyboard
 
         public override DrawableRuleset CreateDrawableRulesetWith(IBeatmap beatmap, IReadOnlyList<Mod>? mods = null) =>
             new DrawableKeyboardRuleset(this, beatmap, mods);
+
+        public override ScoreProcessor CreateScoreProcessor() => new KeyboardScoreProcessor(this);
 
         public override IBeatmapConverter CreateBeatmapConverter(IBeatmap beatmap) =>
             new KeyboardBeatmapConverter(beatmap, this);

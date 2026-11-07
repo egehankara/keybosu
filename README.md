@@ -10,13 +10,23 @@ grows inside a key; press that key the moment it fills the cell.
 - Converts any existing osu! beatmap: each note's position is mapped to the nearest key.
 - **Spinners** become a hold on the Space bar: hold Space for the whole spinner. Held 90%+ is Great,
   60%+ Ok, 30%+ Meh, otherwise Miss. (Taiko swells and catch banana showers convert the same way.)
-- On-screen keyboard scaled to any window size. Two settings under Settings > Ruleset > Keyboard:
+- On-screen keyboard scaled to any window size. Settings under Settings > Ruleset > Keyboard:
   - **Keyboard layout** (what is printed on the keys): English (QWERTY), Turkish Q, Turkish F,
     German (QWERTZ), French (AZERTY), Spanish, Russian (ЙЦУКЕН), Dvorak, Colemak.
   - **Keyboard type**: ANSI (flat Enter, `\` on the top row) or ISO (tall Enter, extra key left of Z).
-  Both are saved and apply the next time a map starts.
+  - **Highlight home row keys** (on by default): the eight keys your fingers rest on get a bright edge,
+    with a bump on the two index-finger keys like a real keyboard. Picked by position, so it is right in every layout.
+  - **Screen centre**: which part sits exactly in the middle of the screen: the whole keyboard, the Space bar,
+    or the boundary between G and H.
+  - **Show judgements** (on by default): Perfect / Great / Good / Ok / Meh / Miss appears small under the letter
+    of the key you hit, using your skin's own judgement graphics, and fades after about half a second.
+  All settings are saved and apply the next time a map starts.
 - The settings follow osu!lazer's language: English, Turkish, German, Spanish, French, Japanese and Russian
   (anything else falls back to English). Texts live in `Localisation/KeyboardStrings.cs`.
+- Timing judgements (± ms at OD 5, tighter at higher OD): Perfect 19 (305 points), Great 49 (300), Good 82 (200),
+  Ok 112 (100), Meh 136 (50). Pressing much too early is a Miss. Windows are in `Objects/KeyboardHitWindows.cs`.
+- Two notes on the same key are never on screen at the same time: the next one only starts filling once the
+  previous one is over (worked out from the map's approach rate).
 - Mods: Autoplay, NoFail, HalfTime, DoubleTime.
 - The 33 letter and punctuation keys are identical in every layout and keyboard type, so beatmap conversion
   never depends on what you picked.
