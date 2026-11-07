@@ -4,33 +4,53 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.ComponentModel;
 using System.Linq;
 using osu.Framework.Input.Bindings;
+using osu.Framework.Localisation;
+using osu.Game.Rulesets.Keyboard.Localisation;
 using osuTK;
 
 namespace osu.Game.Rulesets.Keyboard
 {
     /// <summary>What is printed on the keys: picked in settings.</summary>
+    /// <remarks>New layouts go at the end; existing entries are never reordered.</remarks>
     public enum KeyboardLayoutType
     {
-        [Description("English (QWERTY)")]
+        [LocalisableDescription(typeof(KeyboardStrings), nameof(KeyboardStrings.LayoutEnglishQwerty))]
         EnglishQwerty,
 
-        [Description("Turkish Q")]
+        [LocalisableDescription(typeof(KeyboardStrings), nameof(KeyboardStrings.LayoutTurkishQ))]
         TurkishQ,
 
-        [Description("Turkish F")]
+        [LocalisableDescription(typeof(KeyboardStrings), nameof(KeyboardStrings.LayoutTurkishF))]
         TurkishF,
+
+        [LocalisableDescription(typeof(KeyboardStrings), nameof(KeyboardStrings.LayoutGerman))]
+        German,
+
+        [LocalisableDescription(typeof(KeyboardStrings), nameof(KeyboardStrings.LayoutFrench))]
+        French,
+
+        [LocalisableDescription(typeof(KeyboardStrings), nameof(KeyboardStrings.LayoutSpanish))]
+        Spanish,
+
+        [LocalisableDescription(typeof(KeyboardStrings), nameof(KeyboardStrings.LayoutRussian))]
+        Russian,
+
+        [LocalisableDescription(typeof(KeyboardStrings), nameof(KeyboardStrings.LayoutDvorak))]
+        Dvorak,
+
+        [LocalisableDescription(typeof(KeyboardStrings), nameof(KeyboardStrings.LayoutColemak))]
+        Colemak,
     }
 
     /// <summary>The physical shape of the keyboard: picked in settings.</summary>
     public enum KeyboardType
     {
-        [Description("ANSI (US) - flat Enter")]
+        [LocalisableDescription(typeof(KeyboardStrings), nameof(KeyboardStrings.TypeAnsi))]
         Ansi,
 
-        [Description("ISO (Turkish / European) - tall Enter")]
+        [LocalisableDescription(typeof(KeyboardStrings), nameof(KeyboardStrings.TypeIso))]
         Iso,
     }
 
@@ -52,15 +72,21 @@ namespace osu.Game.Rulesets.Keyboard
         /// <summary>Top edge, in key units (equal to the row index).</summary>
         public float Y { get; }
 
+        /// <summary>Width in key units (1 for every key except Space).</summary>
+        public float Width { get; }
+
+        /// <summary>The label as shown on screen; words like "Space" follow the game's language.</summary>
+        public LocalisableString DisplayLabel => Action == KeyboardAction.Space ? KeyboardStrings.KeySpace : Label;
+
         /// <summary>
         /// Whether beatmap conversion may place notes on this key. Only keys that exist on every keyboard type are
         /// playable; the extra keys (ANSI backslash, ISO key left of Z) are drawn dimmed and never get notes.
         /// </summary>
         public bool Playable { get; }
 
-        public Vector2 Centre => new Vector2(X + 0.5f, Y + 0.5f);
+        public Vector2 Centre => new Vector2(X + Width / 2, Y + 0.5f);
 
-        public KeyDefinition(KeyboardAction action, InputKey key, string label, float x, float y, bool playable = true)
+        public KeyDefinition(KeyboardAction action, InputKey key, string label, float x, float y, bool playable = true, float width = 1)
         {
             Action = action;
             Key = key;
@@ -68,6 +94,7 @@ namespace osu.Game.Rulesets.Keyboard
             X = x;
             Y = y;
             Playable = playable;
+            Width = width;
         }
     }
 
@@ -83,6 +110,8 @@ namespace osu.Game.Rulesets.Keyboard
         public float Width { get; }
 
         public float Height { get; }
+
+        public LocalisableString DisplayLabel => Label == "Enter" ? KeyboardStrings.KeyEnter : Label;
 
         public DecorativeKey(string label, float x, float y, float width, float height)
         {
@@ -130,7 +159,7 @@ namespace osu.Game.Rulesets.Keyboard
             Keys = keys.ToList();
             Decorations = decorations.ToList();
             byAction = Keys.ToDictionary(k => k.Action);
-            Width = Math.Max(Keys.Max(k => k.X + 1), Decorations.Max(d => d.X + d.Width));
+            Width = Math.Max(Keys.Max(k => k.X + k.Width), Decorations.Max(d => d.X + d.Width));
             Height = Math.Max(Keys.Max(k => k.Y + 1), Decorations.Max(d => d.Y + d.Height));
         }
 
@@ -212,6 +241,24 @@ namespace osu.Game.Rulesets.Keyboard
                 case KeyboardLayoutType.TurkishF:
                     return new[] { "F G Ğ I O D R N H P Q W", "U İ E A Ü T K M L Y Ş", "J Ö V C Ç Z S B . ," };
 
+                case KeyboardLayoutType.German:
+                    return new[] { "Q W E R T Z U I O P Ü +", "A S D F G H J K L Ö Ä", "Y X C V B N M , . -" };
+
+                case KeyboardLayoutType.French:
+                    return new[] { "A Z E R T Y U I O P ^ $", "Q S D F G H J K L M Ù", "W X C V B N , ; : !" };
+
+                case KeyboardLayoutType.Spanish:
+                    return new[] { "Q W E R T Y U I O P ` +", "A S D F G H J K L Ñ ´", "Z X C V B N M , . -" };
+
+                case KeyboardLayoutType.Russian:
+                    return new[] { "Й Ц У К Е Н Г Ш Щ З Х Ъ", "Ф Ы В А П Р О Л Д Ж Э", "Я Ч С М И Т Ь Б Ю ." };
+
+                case KeyboardLayoutType.Dvorak:
+                    return new[] { "' , . P Y F G C R L / =", "A O E U I D H T N S -", "; Q J K X B M W V Z" };
+
+                case KeyboardLayoutType.Colemak:
+                    return new[] { "Q W F P G J L U Y ; [ ]", "A R S T D H N E I O '", "Z X C V B K M , . /" };
+
                 default:
                     return new[] { "Q W E R T Y U I O P [ ]", "A S D F G H J K L ; '", "Z X C V B N M , . /" };
             }
@@ -227,6 +274,18 @@ namespace osu.Game.Rulesets.Keyboard
 
                 case KeyboardLayoutType.TurkishF:
                     return ("X", "<", "X");
+
+                case KeyboardLayoutType.German:
+                    return ("#", "<", "#");
+
+                case KeyboardLayoutType.French:
+                    return ("*", "<", "*");
+
+                case KeyboardLayoutType.Spanish:
+                    return ("Ç", "<", "Ç");
+
+                case KeyboardLayoutType.Russian:
+                    return ("\\", "\\", "\\");
 
                 default:
                     return ("\\", "\\", "#");
@@ -271,6 +330,9 @@ namespace osu.Game.Rulesets.Keyboard
                 decorations.Add(new DecorativeKey(extra.isoHomeRowEnd, shift + 11.25f, 1, 1, 1));
                 decorations.Add(new DecorativeKey("Enter", shift + 12.25f, 0, 1, 2));
             }
+
+            // Space bar under the bottom row, roughly from C to M like a real one. Spinners are held here.
+            keys.Add(new KeyDefinition(KeyboardAction.Space, InputKey.Space, "Space", shift + 3f, 3, width: 6f));
 
             return new KeyboardLayout(layoutType, keyboardType, keys, decorations);
         }

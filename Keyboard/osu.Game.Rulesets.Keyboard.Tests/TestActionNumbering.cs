@@ -23,7 +23,7 @@ namespace osu.Game.Rulesets.Keyboard.Tests
             ("Semicolon", 21), ("Quote", 22),
             ("Z", 23), ("X", 24), ("C", 25), ("V", 26), ("B", 27), ("N", 28), ("M", 29),
             ("Comma", 30), ("Period", 31), ("Slash", 32),
-            ("BackSlash", 40), ("NonUSBackSlash", 41),
+            ("BackSlash", 40), ("NonUSBackSlash", 41), ("Space", 42),
         };
 
         [Test]

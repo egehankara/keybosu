@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Linq;
 using osu.Game.Beatmaps;
 using osu.Game.Rulesets.Keyboard.Objects;
+using osu.Game.Rulesets.Objects;
 using osu.Game.Rulesets.Replays;
 
 namespace osu.Game.Rulesets.Keyboard.Replays
@@ -30,7 +31,9 @@ namespace osu.Game.Rulesets.Keyboard.Replays
             foreach (KeyboardHitObject hitObject in Beatmap.HitObjects)
             {
                 events.Add((hitObject.StartTime, hitObject.Key, true));
-                events.Add((hitObject.StartTime + key_down_duration, hitObject.Key, false));
+                // Spinners are held until they end; normal notes are tapped.
+                double release = hitObject is KeyboardSpinner ? hitObject.GetEndTime() : hitObject.StartTime + key_down_duration;
+                events.Add((release, hitObject.Key, false));
             }
 
             // Releases go before presses at the same instant so a key can be re-pressed cleanly.

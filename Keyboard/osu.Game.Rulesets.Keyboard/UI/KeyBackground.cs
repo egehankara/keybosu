@@ -7,6 +7,7 @@ using osu.Framework.Graphics.Colour;
 using osu.Framework.Graphics.Containers;
 using osu.Framework.Graphics.Shapes;
 using osu.Framework.Graphics.Sprites;
+using osu.Framework.Localisation;
 using osu.Game.Graphics;
 using osuTK;
 
@@ -24,16 +25,16 @@ namespace osu.Game.Rulesets.Keyboard.UI
         private float lastUnit;
 
         public KeyBackground(KeyDefinition key, KeyboardLayout layout)
-            : this(key.Label, key.X, key.Y, 1, 1, layout, !key.Playable)
+            : this(key.DisplayLabel, key.X, key.Y, key.Width, 1, layout, !key.Playable)
         {
         }
 
         public KeyBackground(DecorativeKey key, KeyboardLayout layout)
-            : this(key.Label, key.X, key.Y, key.Width, key.Height, layout, true)
+            : this(key.DisplayLabel, key.X, key.Y, key.Width, key.Height, layout, true)
         {
         }
 
-        private KeyBackground(string text, float x, float y, float width, float height, KeyboardLayout layout, bool dim)
+        private KeyBackground(LocalisableString text, float x, float y, float width, float height, KeyboardLayout layout, bool dim)
         {
             // Keys that notes never land on are drawn dim.
             if (dim)

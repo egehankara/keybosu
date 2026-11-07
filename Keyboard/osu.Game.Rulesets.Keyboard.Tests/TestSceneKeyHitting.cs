@@ -38,7 +38,10 @@ namespace osu.Game.Rulesets.Keyboard.Tests
                 }
             };
 
-            // Far in the future so nothing is judged while we poke at the input.
+            // One early note so there is no "skip intro" (which takes Space for itself while it is offered),
+            // the rest far in the future so nothing else is judged while we poke at the input.
+            beatmap.HitObjects.Add(new KeyboardHitObject { Key = KeyboardAction.Q, StartTime = 1000 });
+
             foreach (var key in KeyboardLayout.Default.Keys)
                 beatmap.HitObjects.Add(new KeyboardHitObject { Key = key.Action, StartTime = 600000 });
 

@@ -57,10 +57,20 @@ namespace osu.Game.Rulesets.Keyboard.Beatmaps
                     yield return create(original.StartTime, nodeSamples(original, true), target(startPosition, hasPosition, random));
                     yield return create(duration.EndTime, nodeSamples(original, false), target(endPosition, hasPosition, random));
                 }
+                else if (original is IHasColumn)
+                {
+                    // osu!mania hold notes are long but not spinners: just a note where they start.
+                    yield return create(original.StartTime, original.Samples, target(startPosition, hasPosition, random));
+                }
                 else
                 {
-                    // Spinner and similar: a single note when it ends.
-                    yield return create(duration.EndTime, original.Samples, target(startPosition, hasPosition, random));
+                    // Spinner (and taiko swells, catch banana showers): hold Space for its whole length.
+                    yield return new KeyboardSpinner
+                    {
+                        StartTime = original.StartTime,
+                        Duration = duration.Duration,
+                        Samples = original.Samples,
+                    };
                 }
 
                 yield break;
@@ -90,7 +100,7 @@ namespace osu.Game.Rulesets.Keyboard.Beatmaps
 
         private KeyboardAction pickKey(Vector2 target, double time)
         {
-            var byDistance = layout.Keys.Where(k => k.Playable).OrderBy(k => Vector2.DistanceSquared(k.Centre, target)).ToList();
+            var byDistance = layout.Keys.Where(k => k.Playable && k.Action != KeyboardAction.Space).OrderBy(k => Vector2.DistanceSquared(k.Centre, target)).ToList();
 
             // Nearest key that has not been used around this time; if every key is busy, just take the nearest.
             var chosen = byDistance.Cast<KeyDefinition?>().FirstOrDefault(k => isFree(k!.Value.Action, time)) ?? byDistance[0];

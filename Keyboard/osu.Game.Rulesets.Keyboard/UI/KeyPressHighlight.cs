@@ -24,7 +24,7 @@ namespace osu.Game.Rulesets.Keyboard.UI
 
             RelativePositionAxes = Axes.Both;
             RelativeSizeAxes = Axes.Both;
-            Size = new Vector2(1f / layout.Width, 1f / layout.Height);
+            Size = new Vector2(key.Width / layout.Width, 1f / layout.Height);
             Position = new Vector2(key.X / layout.Width, key.Y / layout.Height);
             Padding = new MarginPadding(KeyBackground.CELL_PADDING);
 

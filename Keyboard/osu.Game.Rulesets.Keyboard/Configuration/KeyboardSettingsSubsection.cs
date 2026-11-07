@@ -4,6 +4,7 @@
 using osu.Framework.Allocation;
 using osu.Framework.Graphics;
 using osu.Game.Overlays.Settings;
+using osu.Game.Rulesets.Keyboard.Localisation;
 
 namespace osu.Game.Rulesets.Keyboard.Configuration
 {
@@ -24,14 +25,14 @@ namespace osu.Game.Rulesets.Keyboard.Configuration
             {
                 new SettingsEnumDropdown<KeyboardLayoutType>
                 {
-                    LabelText = "Keyboard layout",
-                    TooltipText = "What is printed on the keys. Applies the next time a map starts.",
+                    LabelText = KeyboardStrings.KeyboardLayout,
+                    TooltipText = KeyboardStrings.KeyboardLayoutTooltip,
                     Current = config.GetBindable<KeyboardLayoutType>(KeyboardRulesetSetting.Layout),
                 },
                 new SettingsEnumDropdown<KeyboardType>
                 {
-                    LabelText = "Keyboard type",
-                    TooltipText = "The shape of your keyboard: flat Enter (ANSI) or tall Enter with an extra key left of Z (ISO). Applies the next time a map starts.",
+                    LabelText = KeyboardStrings.KeyboardType,
+                    TooltipText = KeyboardStrings.KeyboardTypeTooltip,
                     Current = config.GetBindable<KeyboardType>(KeyboardRulesetSetting.KeyboardType),
                 },
             };

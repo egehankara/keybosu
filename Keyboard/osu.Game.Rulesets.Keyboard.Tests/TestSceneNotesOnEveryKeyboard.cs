@@ -34,7 +34,7 @@ namespace osu.Game.Rulesets.Keyboard.Tests
             };
 
             // One note per key on the keyboard, all close together so they are alive at the same time.
-            foreach (var key in KeyboardLayout.Default.Keys.Where(k => k.Playable))
+            foreach (var key in KeyboardLayout.Default.Keys.Where(k => k.Playable && k.Action != KeyboardAction.Space))
                 beatmap.HitObjects.Add(new KeyboardHitObject { Key = key.Action, StartTime = 3000 });
 
             return beatmap;

@@ -25,7 +25,7 @@ namespace osu.Game.Rulesets.Keyboard.Tests
         {
             var layout = KeyboardLayout.Create(layoutType, type);
 
-            var rects = layout.Keys.Select(k => (name: $"key {k.Label}", x: k.X, y: k.Y, w: 1f, h: 1f))
+            var rects = layout.Keys.Select(k => (name: $"key {k.Label}", x: k.X, y: k.Y, w: k.Width, h: 1f))
                               .Concat(layout.Decorations.Select(d => (name: $"decoration {d.Label}", x: d.X, y: d.Y, w: d.Width, h: d.Height)))
                               .ToList();
 
@@ -57,6 +57,26 @@ namespace osu.Game.Rulesets.Keyboard.Tests
             Assert.That(layout.Keys.Where(k => k.Playable).Select(k => k.Action).OrderBy(a => a), Is.EqualTo(reference),
                 "conversion relies on the playable keys being identical for every layout and keyboard type");
             Assert.That(layout.Keys.Count(k => !k.Playable), Is.EqualTo(1), "each keyboard type has exactly one extra (dimmed) key");
+        }
+
+        [TestCaseSource(nameof(allCombinations))]
+        public void TestEveryLetterKeyHasItsOwnLabel(KeyboardLayoutType layoutType, KeyboardType type)
+        {
+            var labels = KeyboardLayout.Create(layoutType, type).Keys.Where(k => k.Playable && k.Action != KeyboardAction.Space).Select(k => k.Label).ToList();
+
+            Assert.That(labels, Has.Count.EqualTo(33));
+            Assert.That(labels, Is.Unique, "two keys show the same character");
+            Assert.That(labels, Has.All.Not.Empty);
+        }
+
+        [TestCaseSource(nameof(allCombinations))]
+        public void TestSpaceBarIsBelowEverything(KeyboardLayoutType layoutType, KeyboardType type)
+        {
+            var layout = KeyboardLayout.Create(layoutType, type);
+            var space = layout[KeyboardAction.Space];
+
+            Assert.That(space.Y, Is.EqualTo(layout.Keys.Max(k => k.Y)), "space is the bottom row");
+            Assert.That(space.Width, Is.GreaterThan(4), "space is a long bar");
         }
 
         [Test]

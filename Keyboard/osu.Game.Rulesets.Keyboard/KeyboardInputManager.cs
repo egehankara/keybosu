@@ -2,11 +2,14 @@
 // See the LICENCE file in the repository root for full licence text.
 
 using System.ComponentModel;
+using osu.Framework.Allocation;
 using osu.Framework.Input.Bindings;
 using osu.Game.Rulesets.UI;
 
 namespace osu.Game.Rulesets.Keyboard
 {
+    // Cached so spinners can ask whether Space is already held when they appear.
+    [Cached]
     public partial class KeyboardInputManager : RulesetInputManager<KeyboardAction>
     {
         public KeyboardInputManager(RulesetInfo ruleset)
@@ -101,6 +104,10 @@ namespace osu.Game.Rulesets.Keyboard
 
         [Description("Extra key left of Z (ISO keyboards)")]
         NonUSBackSlash = 41,
+
+        // Held down for the whole length of a spinner.
+        [Description("Space (spinners)")]
+        Space = 42,
 
         // Bottom row.
         [Description("Z")]

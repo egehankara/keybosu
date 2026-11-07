@@ -28,7 +28,13 @@ namespace osu.Game.Rulesets.Keyboard.UI
 
         protected override ReplayInputHandler CreateReplayInputHandler(Replay replay) => new KeyboardFramedReplayInputHandler(replay);
 
-        public override DrawableHitObject<KeyboardHitObject> CreateDrawableRepresentation(KeyboardHitObject h) => new DrawableKeyboardHitObject(h);
+        public override DrawableHitObject<KeyboardHitObject> CreateDrawableRepresentation(KeyboardHitObject h)
+        {
+            if (h is KeyboardSpinner spinner)
+                return new DrawableKeyboardSpinner(spinner);
+
+            return new DrawableKeyboardHitObject(h);
+        }
 
         protected override PassThroughInputManager CreateInputManager() => new KeyboardInputManager(Ruleset.RulesetInfo);
     }
