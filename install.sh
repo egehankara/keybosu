@@ -1,0 +1,9 @@
+#!/bin/sh
+# Builds the ruleset and copies it into osu!lazer's user ruleset folder.
+set -e
+cd "$(dirname "$0")/Keyboard/osu.Game.Rulesets.Keyboard"
+dotnet build -c Release -v quiet -nologo
+DEST="${OSU_DATA:-$HOME/.local/share/osu}/rulesets"
+mkdir -p "$DEST"
+cp bin/Release/net10.0/osu.Game.Rulesets.Keyboard.dll "$DEST/"
+echo "Installed to $DEST - restart osu!lazer."
