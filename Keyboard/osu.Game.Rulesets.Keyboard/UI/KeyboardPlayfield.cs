@@ -5,6 +5,7 @@ using System.Linq;
 using osu.Framework.Allocation;
 using osu.Framework.Graphics;
 using osu.Framework.Graphics.Containers;
+using osu.Game.Rulesets.Keyboard.Configuration;
 using osu.Game.Rulesets.UI;
 
 namespace osu.Game.Rulesets.Keyboard.UI
@@ -12,11 +13,19 @@ namespace osu.Game.Rulesets.Keyboard.UI
     [Cached]
     public partial class KeyboardPlayfield : Playfield
     {
-        public KeyboardLayout Layout { get; } = KeyboardLayout.Qwerty;
+        /// <summary>
+        /// The layout chosen in settings. It is fixed for the whole play: changing the setting applies to the next map.
+        /// Hit objects read this to know where their key is.
+        /// </summary>
+        public KeyboardLayout Layout { get; private set; } = KeyboardLayout.Default;
 
         [BackgroundDependencyLoader]
-        private void load()
+        private void load(KeyboardRulesetConfigManager config)
         {
+            Layout = KeyboardLayout.Create(
+                config.Get<KeyboardLayoutType>(KeyboardRulesetSetting.Layout),
+                config.Get<KeyboardType>(KeyboardRulesetSetting.KeyboardType));
+
             HitObjectContainer.RelativeSizeAxes = Axes.Both;
 
             // Everything lives in one box that keeps the keyboard's aspect ratio, and all children
@@ -35,7 +44,20 @@ namespace osu.Game.Rulesets.Keyboard.UI
                         new Container
                         {
                             RelativeSizeAxes = Axes.Both,
-                            ChildrenEnumerable = Layout.Keys.Select(k => new KeyBackground(k, Layout)),
+                            Children = new Drawable[]
+                            {
+                                // Enter and other shapes that are only drawn, then the real keys.
+                                new Container
+                                {
+                                    RelativeSizeAxes = Axes.Both,
+                                    ChildrenEnumerable = Layout.Decorations.Select(d => new KeyBackground(d, Layout)),
+                                },
+                                new Container
+                                {
+                                    RelativeSizeAxes = Axes.Both,
+                                    ChildrenEnumerable = Layout.Keys.Select(k => new KeyBackground(k, Layout)),
+                                },
+                            }
                         },
                         HitObjectContainer,
                         new Container

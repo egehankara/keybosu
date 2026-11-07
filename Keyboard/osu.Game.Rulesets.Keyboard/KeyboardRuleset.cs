@@ -10,9 +10,13 @@ using osu.Framework.Graphics.Shapes;
 using osu.Framework.Graphics.Sprites;
 using osu.Framework.Input.Bindings;
 using osu.Game.Beatmaps;
+using osu.Game.Configuration;
 using osu.Game.Graphics;
+using osu.Game.Overlays.Settings;
+using osu.Game.Rulesets.Configuration;
 using osu.Game.Rulesets.Difficulty;
 using osu.Game.Rulesets.Keyboard.Beatmaps;
+using osu.Game.Rulesets.Keyboard.Configuration;
 using osu.Game.Rulesets.Keyboard.Mods;
 using osu.Game.Rulesets.Keyboard.UI;
 using osu.Game.Rulesets.Mods;
@@ -55,9 +59,13 @@ namespace osu.Game.Rulesets.Keyboard
 
         public override string ShortName => "keyboard";
 
-        // Each action is bound to its own physical key, taken straight from the layout.
+        // Each action is bound to its own physical key, taken from the layout (including keys only some keyboards have).
         public override IEnumerable<KeyBinding> GetDefaultKeyBindings(int variant = 0)
-            => KeyboardLayout.Qwerty.Keys.Select(k => new KeyBinding(k.Key, k.Action));
+            => KeyboardLayout.AllBindableKeys.Select(k => new KeyBinding(k.Key, k.Action));
+
+        public override IRulesetConfigManager CreateConfig(SettingsStore? settings) => new KeyboardRulesetConfigManager(settings, RulesetInfo);
+
+        public override RulesetSettingsSubsection CreateSettings() => new KeyboardSettingsSubsection(this);
 
         public override Drawable CreateIcon() => new Icon('K');
 

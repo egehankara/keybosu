@@ -21,106 +21,116 @@ namespace osu.Game.Rulesets.Keyboard
     /// </summary>
     public enum KeyboardAction
     {
+        // IMPORTANT: lazer stores key bindings by these numbers. Never renumber or reorder existing members,
+        // or saved bindings silently point at the wrong keys. Add new members with a new, unused number.
+
         // Top letter row.
         [Description("Q")]
-        Q,
+        Q = 0,
 
         [Description("W")]
-        W,
+        W = 1,
 
         [Description("E")]
-        E,
+        E = 2,
 
         [Description("R")]
-        R,
+        R = 3,
 
         [Description("T")]
-        T,
+        T = 4,
 
         [Description("Y")]
-        Y,
+        Y = 5,
 
         [Description("U")]
-        U,
+        U = 6,
 
         [Description("I")]
-        I,
+        I = 7,
 
         [Description("O")]
-        O,
+        O = 8,
 
         [Description("P")]
-        P,
+        P = 9,
 
         [Description("[")]
-        BracketLeft,
+        BracketLeft = 10,
 
         [Description("]")]
-        BracketRight,
+        BracketRight = 11,
 
         // Home row.
         [Description("A")]
-        A,
+        A = 12,
 
         [Description("S")]
-        S,
+        S = 13,
 
         [Description("D")]
-        D,
+        D = 14,
 
         [Description("F")]
-        F,
+        F = 15,
 
         [Description("G")]
-        G,
+        G = 16,
 
         [Description("H")]
-        H,
+        H = 17,
 
         [Description("J")]
-        J,
+        J = 18,
 
         [Description("K")]
-        K,
+        K = 19,
 
         [Description("L")]
-        L,
+        L = 20,
 
         [Description(";")]
-        Semicolon,
+        Semicolon = 21,
 
         [Description("'")]
-        Quote,
+        Quote = 22,
+
+        // Extra keys that only some keyboards have. Numbers are deliberately far from the letter keys.
+        [Description("Backslash (ANSI keyboards)")]
+        BackSlash = 40,
+
+        [Description("Extra key left of Z (ISO keyboards)")]
+        NonUSBackSlash = 41,
 
         // Bottom row.
         [Description("Z")]
-        Z,
+        Z = 23,
 
         [Description("X")]
-        X,
+        X = 24,
 
         [Description("C")]
-        C,
+        C = 25,
 
         [Description("V")]
-        V,
+        V = 26,
 
         [Description("B")]
-        B,
+        B = 27,
 
         [Description("N")]
-        N,
+        N = 28,
 
         [Description("M")]
-        M,
+        M = 29,
 
         [Description(",")]
-        Comma,
+        Comma = 30,
 
         [Description(".")]
-        Period,
+        Period = 31,
 
         [Description("/")]
-        Slash,
+        Slash = 32,
     }
 }

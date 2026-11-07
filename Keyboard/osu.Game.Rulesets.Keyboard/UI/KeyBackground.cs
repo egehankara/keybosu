@@ -1,6 +1,7 @@
 // Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
 // See the LICENCE file in the repository root for full licence text.
 
+using System;
 using osu.Framework.Graphics;
 using osu.Framework.Graphics.Colour;
 using osu.Framework.Graphics.Containers;
@@ -20,14 +21,28 @@ namespace osu.Game.Rulesets.Keyboard.UI
         public const float CELL_PADDING = 3;
 
         private readonly SpriteText label;
-        private float lastHeight;
+        private float lastUnit;
 
         public KeyBackground(KeyDefinition key, KeyboardLayout layout)
+            : this(key.Label, key.X, key.Y, 1, 1, layout, !key.Playable)
         {
+        }
+
+        public KeyBackground(DecorativeKey key, KeyboardLayout layout)
+            : this(key.Label, key.X, key.Y, key.Width, key.Height, layout, true)
+        {
+        }
+
+        private KeyBackground(string text, float x, float y, float width, float height, KeyboardLayout layout, bool dim)
+        {
+            // Keys that notes never land on are drawn dim.
+            if (dim)
+                Alpha = 0.35f;
+
             RelativePositionAxes = Axes.Both;
             RelativeSizeAxes = Axes.Both;
-            Size = new Vector2(1f / layout.Width, 1f / layout.Height);
-            Position = new Vector2(key.X / layout.Width, key.Y / layout.Height);
+            Size = new Vector2(width / layout.Width, height / layout.Height);
+            Position = new Vector2(x / layout.Width, y / layout.Height);
             Padding = new MarginPadding(CELL_PADDING);
 
             InternalChild = new Container
@@ -48,7 +63,7 @@ namespace osu.Game.Rulesets.Keyboard.UI
                     {
                         Anchor = Anchor.Centre,
                         Origin = Anchor.Centre,
-                        Text = key.Label,
+                        Text = text,
                         Colour = Colour4.White.Opacity(0.7f),
                     },
                 }
@@ -59,11 +74,16 @@ namespace osu.Game.Rulesets.Keyboard.UI
         {
             base.Update();
 
-            // Keep the label proportional to the key as the window is resized.
-            if (DrawHeight > 0 && DrawHeight != lastHeight)
+            // Keep the label proportional to the key as the window is resized. Tall or wide keys use their smaller side.
+            float unit = Math.Min(DrawWidth, DrawHeight);
+
+            if (unit > 0 && unit != lastUnit)
             {
-                lastHeight = DrawHeight;
-                label.Font = OsuFont.Default.With(size: DrawHeight * 0.4f, weight: FontWeight.Bold);
+                lastUnit = unit;
+
+                // Words like "Enter" need a smaller font than single characters to fit.
+                float scale = label.Text.ToString().Length > 1 ? 0.28f : 0.4f;
+                label.Font = OsuFont.Default.With(size: unit * scale, weight: FontWeight.Bold);
             }
         }
     }

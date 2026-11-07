@@ -27,20 +27,20 @@ namespace osu.Game.Rulesets.Keyboard.Objects.Drawables
         public DrawableKeyboardHitObject(KeyboardHitObject hitObject)
             : base(hitObject)
         {
-            var layout = KeyboardLayout.Qwerty;
-            var key = layout[hitObject.Key];
+            Origin = Anchor.Centre;
+        }
+
+        [BackgroundDependencyLoader]
+        private void load(KeyboardPlayfield playfield)
+        {
+            // Where this note lives depends on the keyboard shape chosen in settings, which the playfield knows.
+            var layout = playfield.Layout;
+            var key = layout[HitObject.Key];
 
             RelativePositionAxes = Axes.Both;
             RelativeSizeAxes = Axes.Both;
             Size = new Vector2(1f / layout.Width, 1f / layout.Height);
-            Origin = Anchor.Centre;
             Position = new Vector2(key.Centre.X / layout.Width, key.Centre.Y / layout.Height);
-        }
-
-        [BackgroundDependencyLoader]
-        private void load()
-        {
-            var key = KeyboardLayout.Qwerty[HitObject.Key];
 
             AddInternal(new Container
             {
@@ -54,7 +54,7 @@ namespace osu.Game.Rulesets.Keyboard.Objects.Drawables
                     Masking = true,
                     CornerRadius = 8,
                     // Colour follows the key's horizontal position, so the keyboard reads as a rainbow.
-                    Colour = Colour4.FromHSV(key.X / KeyboardLayout.Qwerty.Width, 0.55f, 1f),
+                    Colour = Colour4.FromHSV(key.X / layout.Width, 0.55f, 1f),
                     Alpha = 0.85f,
                     Child = new Box { RelativeSizeAxes = Axes.Both },
                 }

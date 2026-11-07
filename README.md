@@ -8,13 +8,33 @@ grows inside a key; press that key the moment it fills the cell.
 ## Features
 
 - Converts any existing osu! beatmap: each note's position is mapped to the nearest key.
-- On-screen US QWERTY layout (33 keys), scaled to any window size.
+- On-screen keyboard scaled to any window size. Two settings under Settings > Ruleset > Keyboard:
+  - **Keyboard layout**: English (QWERTY), Turkish Q or Turkish F (what is printed on the keys).
+  - **Keyboard type**: ANSI (flat Enter, `\` on the top row) or ISO (tall Enter, extra key left of Z).
+  Both are saved and apply the next time a map starts.
 - Mods: Autoplay, NoFail, HalfTime, DoubleTime.
-- Keyboard layout is plain data (`KeyboardLayout.cs`), so more layouts can be added later.
+- The 33 letter and punctuation keys are identical in every layout and keyboard type, so beatmap conversion
+  never depends on what you picked.
+
+## Notes
+
+- The extra keys (ANSI backslash, ISO key left of Z) and Enter are drawn dimmed and never get notes.
+  The ISO home-row key osu!framework cannot read at all, so it is only drawn.
+- Input is read by physical key position, so the OS keyboard language does not matter.
+- **Never renumber `KeyboardAction`.** lazer stores key bindings by number; changing one makes saved bindings
+  point at the wrong keys, and two actions on one key makes lazer wipe that key. `TestActionNumbering` guards this.
+
+## Tests
+
+```sh
+dotnet test Keyboard/osu.Game.Rulesets.Keyboard.Tests -c Release
+```
+
+Runs headless. It presses every key through the real input pipeline, loads real plays on each keyboard type,
+and checks the layout geometry.
 
 ## Not done yet
 
-- Layout selection in settings.
 - Replay recording (autoplay works).
 - A real star-rating model (currently note density only).
 

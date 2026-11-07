@@ -29,7 +29,7 @@ namespace osu.Game.Rulesets.Keyboard.Beatmaps
         /// </summary>
         private const double min_same_key_gap = 350;
 
-        private readonly KeyboardLayout layout = KeyboardLayout.Qwerty;
+        private readonly KeyboardLayout layout = KeyboardLayout.Default;
         private readonly Dictionary<KeyboardAction, SortedSet<double>> usedTimes = new Dictionary<KeyboardAction, SortedSet<double>>();
 
         public KeyboardBeatmapConverter(IBeatmap beatmap, Ruleset ruleset)
@@ -90,7 +90,7 @@ namespace osu.Game.Rulesets.Keyboard.Beatmaps
 
         private KeyboardAction pickKey(Vector2 target, double time)
         {
-            var byDistance = layout.Keys.OrderBy(k => Vector2.DistanceSquared(k.Centre, target)).ToList();
+            var byDistance = layout.Keys.Where(k => k.Playable).OrderBy(k => Vector2.DistanceSquared(k.Centre, target)).ToList();
 
             // Nearest key that has not been used around this time; if every key is busy, just take the nearest.
             var chosen = byDistance.Cast<KeyDefinition?>().FirstOrDefault(k => isFree(k!.Value.Action, time)) ?? byDistance[0];
