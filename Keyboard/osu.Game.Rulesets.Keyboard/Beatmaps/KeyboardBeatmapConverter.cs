@@ -27,10 +27,10 @@ namespace osu.Game.Rulesets.Keyboard.Beatmaps
         private const double min_same_key_gap = 350;
 
         /// <summary>
-        /// A slider, or one pass of a reverse slider, shorter than this many beats counts as very short.
-        /// Just under 1/2, so that real 1/2 sliders are not caught by rounding in their length.
+        /// A slider, or one pass of a reverse slider, shorter than this many beats counts as short.
+        /// Just under 1.5, so that real 1.5 beat sliders are not caught by rounding in their length.
         /// </summary>
-        private const double short_slider_beats = 0.45;
+        private const double short_slider_beats = 1.45;
 
         /// <summary>
         /// Two notes on the same key closer together than this (in ms) would be on screen at the same time,
@@ -81,7 +81,7 @@ namespace osu.Game.Rulesets.Keyboard.Beatmaps
                 if (original is IHasPath path)
                 {
                     // Slider: a note on the head, one on every turn of a reverse slider, and one where it ends.
-                    // Very short sliders are only the head, and turns that come very quickly get no note.
+                    // Short sliders are only the head, and turns that come quickly get no note.
                     int repeats = (original as IHasRepeats)?.RepeatCount ?? 0;
                     double shortLength = beatmap.ControlPointInfo.TimingPointAt(original.StartTime).BeatLength * short_slider_beats;
                     double spanDuration = duration.Duration / (repeats + 1);

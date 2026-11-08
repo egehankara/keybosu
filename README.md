@@ -15,8 +15,8 @@ Any existing osu! beatmap can be played: it is converted automatically.
 - **Notes:** each note of the original map goes to the key nearest to where it was on the osu! playfield
   (top of the screen → top letter row, bottom → bottom row). A key never shows two notes at once: the next one
   only appears when the previous one is over.
-- **Sliders** become a press where they start and a press where they end. Very short ones (under about half a beat)
-  are only the first press. Reverse sliders also get a press on every turn, unless the turns come that quickly.
+- **Sliders** become a press where they start and a press where they end. Short ones (under about one and a half
+  beats) are only the first press. Reverse sliders also get a press on every turn, unless the turns come that quickly.
 - **Spinners** (and taiko swells / catch banana showers) become a hold on the Space bar. Hold Space for the whole
   spinner: a circle grows out from the middle as you hold. 90%+ is Great, 60%+ Ok, 30%+ Meh, otherwise Miss.
 - **Timing** is exactly osu!standard's (300 / 100 / 50): ±49.5 / 99.5 / 149.5 ms at OD 5, the same OD curves and
@@ -97,7 +97,7 @@ keybosu! is a fan-made ruleset and is not affiliated with ppy.
 ## Türkçe
 
 **keybosu!**, bütün klavyenin oyun alanı olduğu bir osu!lazer ruleset'i. Tuşların içinde renkli kareler büyür, kare
-tuşu doldurduğu anda o tuşa basarsın. Spinner'larda Space'e basılı tutarsın. Slider'lar başta ve sonda birer basış olur, çok kısa olanlar tek basıştır. Bütün osu! haritaları otomatik olarak
+tuşu doldurduğu anda o tuşa basarsın. Spinner'larda Space'e basılı tutarsın. Slider'lar başta ve sonda birer basış olur, kısa olanlar tek basıştır. Bütün osu! haritaları otomatik olarak
 dönüştürülür. Zamanlama osu!standard ile birebir aynıdır, renkler skin'inin ya da haritanın combo renkleridir.
 Ayarlar (klavye düzeni, klavye türü, ekran merkezi, temel sıra vurgusu, isabet dereceleri) osu!'nun desteklediği
 39 dile çevrilidir. Kurulum için yukarıdaki *Install* bölümüne bak. Özel rulesetler PP vermez.

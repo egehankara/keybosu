@@ -33,13 +33,13 @@ namespace osu.Game.Rulesets.Keyboard.Tests
 
         private static double[] noteTimes(Beatmap<KeyboardHitObject> beatmap) => beatmap.HitObjects.Select(h => h.StartTime).ToArray();
 
-        // The default beat is 1000 ms, so anything under 450 ms is very short.
-        [TestCase(400, 0, new double[] { 1000 }, TestName = "Very short slider is one press")]
-        [TestCase(500, 0, new double[] { 1000, 1500 }, TestName = "A 1/2 slider is two presses")]
-        [TestCase(2000, 0, new double[] { 1000, 3000 }, TestName = "Long slider is two presses")]
-        [TestCase(1500, 2, new double[] { 1000, 1500, 2000, 2500 }, TestName = "Reverse slider gets a press on every turn")]
-        [TestCase(800, 3, new double[] { 1000, 1800 }, TestName = "Quick turns get no press")]
-        [TestCase(200, 1, new double[] { 1000 }, TestName = "Very short reverse slider is one press")]
+        // The default beat is 1000 ms, so anything under 1450 ms is short.
+        [TestCase(500, 0, new double[] { 1000 }, TestName = "A 1/2 beat slider is one press")]
+        [TestCase(1000, 0, new double[] { 1000 }, TestName = "A one beat slider is one press")]
+        [TestCase(1500, 0, new double[] { 1000, 2500 }, TestName = "A 1.5 beat slider is two presses")]
+        [TestCase(6000, 2, new double[] { 1000, 3000, 5000, 7000 }, TestName = "Reverse slider with long passes gets a press on every turn")]
+        [TestCase(3200, 3, new double[] { 1000, 4200 }, TestName = "Short passes get no press on the turns")]
+        [TestCase(1200, 1, new double[] { 1000 }, TestName = "Short reverse slider is one press")]
         public void TestSliderPresses(double duration, int repeats, double[] expected)
         {
             var result = convert(new FakeSlider { StartTime = 1000, Duration = duration, RepeatCount = repeats });
@@ -52,7 +52,7 @@ namespace osu.Game.Rulesets.Keyboard.Tests
         {
             var source = new Beatmap<HitObject>();
             source.ControlPointInfo.Add(0, new TimingControlPoint { BeatLength = 2000 });
-            source.HitObjects.Add(new FakeSlider { StartTime = 1000, Duration = 800 });
+            source.HitObjects.Add(new FakeSlider { StartTime = 1000, Duration = 2800 });
 
             var result = (Beatmap<KeyboardHitObject>)new KeyboardBeatmapConverter(source, new KeyboardRuleset()).Convert();
 
