@@ -1,4 +1,4 @@
-// Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
+// Copyright (c) 2026 xrayzack1010. Licensed under the MIT Licence.
 // See the LICENCE file in the repository root for full licence text.
 
 using System;
@@ -11,6 +11,7 @@ using osu.Game.Rulesets.Keyboard.Localisation;
 using osu.Game.Rulesets.Keyboard.Objects;
 using osu.Game.Rulesets.Objects;
 using osu.Game.Rulesets.Objects.Types;
+using osu.Game.Rulesets.Scoring;
 using osuTK;
 
 namespace osu.Game.Rulesets.Keyboard.Tests
@@ -35,6 +36,72 @@ namespace osu.Game.Rulesets.Keyboard.Tests
             Assert.That(spinner!.Key, Is.EqualTo(KeyboardAction.Space));
             Assert.That(spinner.StartTime, Is.EqualTo(1000));
             Assert.That(spinner.EndTime, Is.EqualTo(3500));
+        }
+
+        [Test]
+        public void TestComboStartsAreCopied()
+        {
+            var result = convert(
+                new FakeCircle { StartTime = 1000, Position = new Vector2(10, 10), NewCombo = true, ComboOffset = 2 },
+                new FakeCircle { StartTime = 1500, Position = new Vector2(300, 200) },
+                new FakeCircle { StartTime = 2000, Position = new Vector2(500, 380), NewCombo = true });
+
+            Assert.That(result.HitObjects.Select(h => h.NewCombo), Is.EqualTo(new[] { true, false, true }));
+            Assert.That(result.HitObjects[0].ComboOffset, Is.EqualTo(2));
+
+            new KeyboardRuleset().CreateBeatmapProcessor(result).PreProcess();
+            Assert.That(result.HitObjects[0].ComboIndex, Is.EqualTo(result.HitObjects[1].ComboIndex), "same combo");
+            Assert.That(result.HitObjects[2].ComboIndex, Is.GreaterThan(result.HitObjects[1].ComboIndex), "new combo");
+        }
+
+        [Test]
+        public void TestTopOfTheScreenGoesToTheTopRowAndBottomToTheBottomRow()
+        {
+            // Notes 3s apart: more than the same-key gap, so only their position decides the key.
+            var layout = KeyboardLayout.Default;
+            float rowOf(KeyboardHitObject h) => layout[h.Key].Y;
+
+            var top = convert(Enumerable.Range(0, 40).Select(i => (HitObject)new FakeCircle { StartTime = i * 3000, Position = new Vector2(i * 12, 5) }).ToArray());
+            var bottom = convert(Enumerable.Range(0, 40).Select(i => (HitObject)new FakeCircle { StartTime = i * 3000, Position = new Vector2(i * 12, 380) }).ToArray());
+
+            Assert.That(top.HitObjects.All(h => rowOf(h) == 0), Is.True, "top of the osu! playfield -> top letter row");
+            Assert.That(bottom.HitObjects.All(h => rowOf(h) == 2), Is.True,
+                "bottom of the osu! playfield -> bottom letter row; got: " + string.Join(" ", bottom.HitObjects.Select(h => $"{h.StartTime / 1000}:{h.Key}")));
+        }
+
+        [Test]
+        public void TestNotesSpreadEvenlyOverTheThreeRows()
+        {
+            var rng = new Random(7);
+            var result = convert(Enumerable.Range(0, 3000).Select(i => (HitObject)new FakeCircle
+            {
+                StartTime = i * 3000, // far apart (more than the same-key gap), so only the position decides the key
+                Position = new Vector2(rng.Next(0, 513), rng.Next(0, 385)),
+            }).ToArray());
+
+            var perRow = result.HitObjects.GroupBy(h => KeyboardLayout.Default[h.Key].Y).ToDictionary(g => g.Key, g => g.Count());
+
+            // Roughly a third each (the bottom row has fewer keys, so allow some slack).
+            foreach (float row in new[] { 0f, 1f, 2f })
+                Assert.That(perRow[row], Is.InRange(600, 1400), $"row {row} got {perRow[row]} of 3000 notes");
+        }
+
+        [Test]
+        public void TestRateModsChangeTheStarRating()
+        {
+            var beatmap = new Beatmap<HitObject> { BeatmapInfo = { Ruleset = new KeyboardRuleset().RulesetInfo } };
+            for (int i = 0; i < 200; i++)
+                beatmap.HitObjects.Add(new FakeCircle { StartTime = i * 250, Position = new Vector2(i % 512, 100) });
+
+            var working = new osu.Game.Tests.Beatmaps.TestWorkingBeatmap(beatmap);
+            var calculator = new KeyboardRuleset().CreateDifficultyCalculator(working);
+
+            double normal = calculator.Calculate().StarRating;
+            double doubleTime = calculator.Calculate(new osu.Game.Rulesets.Mods.Mod[] { new osu.Game.Rulesets.Keyboard.Mods.KeyboardModDoubleTime() }).StarRating;
+            double halfTime = calculator.Calculate(new osu.Game.Rulesets.Mods.Mod[] { new osu.Game.Rulesets.Keyboard.Mods.KeyboardModHalfTime() }).StarRating;
+
+            Assert.That(doubleTime, Is.GreaterThan(normal));
+            Assert.That(halfTime, Is.LessThan(normal));
         }
 
         [Test]
@@ -79,8 +146,8 @@ namespace osu.Game.Rulesets.Keyboard.Tests
 
                 for (int i = 1; i < notes.Count; i++)
                 {
-                    // The next square may only start growing once the previous note's late window (136ms at OD5) is over.
-                    double nextStartsFilling = notes[i].StartTime - notes[i].TimePreempt;
+                    // The next square may only appear once the previous note's late window (150ms at OD5) is over.
+                    double nextStartsFilling = notes[i].StartTime - notes[i].AppearOffset;
                     Assert.That(nextStartsFilling, Is.GreaterThanOrEqualTo(notes[i - 1].StartTime + 150),
                         $"AR{approachRate}: two notes on {group.Key} at {notes[i - 1].StartTime} and {notes[i].StartTime} overlap on screen");
                 }
@@ -88,48 +155,124 @@ namespace osu.Game.Rulesets.Keyboard.Tests
         }
 
         [Test]
-        public void TestPerfectIsWorthMoreThanGreat()
+        public void TestOnlyGreatOkMehAndMiss()
         {
-            var scoring = new KeyboardRuleset().CreateScoreProcessor();
-            Assert.That(scoring.GetBaseScoreForResult(osu.Game.Rulesets.Scoring.HitResult.Perfect), Is.EqualTo(305));
-            Assert.That(scoring.GetBaseScoreForResult(osu.Game.Rulesets.Scoring.HitResult.Great), Is.EqualTo(300));
-            Assert.That(scoring.GetBaseScoreForResult(osu.Game.Rulesets.Scoring.HitResult.Good), Is.EqualTo(200));
+            var windows = new KeyboardHitWindows();
+            windows.SetDifficulty(5);
+
+            var allowed = Enum.GetValues<HitResult>().Where(windows.IsHitResultAllowed).OrderBy(r => r).ToArray();
+            Assert.That(allowed, Is.EqualTo(new[] { HitResult.Miss, HitResult.Meh, HitResult.Ok, HitResult.Great }.OrderBy(r => r)));
+
+            // At OD 5, like osu!standard: Great within 49.5ms, Ok within 99.5ms, Meh within 149.5ms, Miss if pressed up to 400ms early.
+            Assert.That(windows.ResultFor(0), Is.EqualTo(HitResult.Great));
+            Assert.That(windows.ResultFor(-45), Is.EqualTo(HitResult.Great));
+            Assert.That(windows.ResultFor(80), Is.EqualTo(HitResult.Ok));
+            Assert.That(windows.ResultFor(-130), Is.EqualTo(HitResult.Meh));
+            Assert.That(windows.ResultFor(-300), Is.EqualTo(HitResult.Miss));
+            Assert.That(windows.ResultFor(-450), Is.EqualTo(HitResult.None), "far too early is ignored");
+
+            Assert.That(new KeyboardHitObject().CreateJudgement().MaxResult, Is.EqualTo(HitResult.Great));
+            Assert.That(new KeyboardSpinner().CreateJudgement().MaxResult, Is.EqualTo(HitResult.Great));
+        }
+
+        // Values from osu!standard's OsuHitWindows: floor(DifficultyRange(OD, 80/50/20, 140/100/60, 200/150/100)) - 0.5, Miss 400.
+        [TestCase(0, 79.5, 139.5, 199.5)]
+        [TestCase(5, 49.5, 99.5, 149.5)]
+        [TestCase(8, 31.5, 75.5, 119.5)]
+        [TestCase(10, 19.5, 59.5, 99.5)]
+        public void TestWindowsMatchOsuStandard(double od, double great, double ok, double meh)
+        {
+            var windows = new KeyboardHitWindows();
+            windows.SetDifficulty(od);
+
+            Assert.That(windows.WindowFor(HitResult.Great), Is.EqualTo(great));
+            Assert.That(windows.WindowFor(HitResult.Ok), Is.EqualTo(ok));
+            Assert.That(windows.WindowFor(HitResult.Meh), Is.EqualTo(meh));
+            Assert.That(windows.WindowFor(HitResult.Miss), Is.EqualTo(400));
         }
 
         [Test]
-        public void TestEveryTextIsTranslatedIntoEveryLanguage()
+        public void TestLateNoteStartsPartlyFullAndGrowsAtTheSameSpeed()
         {
-            foreach (string key in KeyboardStrings.AllKeys)
+            var note = new KeyboardHitObject { StartTime = 5000, PreviousOnSameKey = 4500 };
+            note.ApplyDefaults(new osu.Game.Beatmaps.ControlPoints.ControlPointInfo(), new BeatmapDifficulty { ApproachRate = 5 });
+
+            // AR 5 = 1200ms to fill, but the key is only free from 4500 + 200.
+            Assert.That(note.FillDuration, Is.EqualTo(1200));
+            Assert.That(note.AppearOffset, Is.EqualTo(300));
+            Assert.That(note.InitialFill, Is.EqualTo(0.75f).Within(0.001f), "appears three quarters full, so the growth speed is unchanged");
+
+            var free = new KeyboardHitObject { StartTime = 5000 };
+            free.ApplyDefaults(new osu.Game.Beatmaps.ControlPoints.ControlPointInfo(), new BeatmapDifficulty { ApproachRate = 5 });
+            Assert.That(free.AppearOffset, Is.EqualTo(1200));
+            Assert.That(free.InitialFill, Is.Zero);
+        }
+
+        [Test]
+        public void TestEveryOsuLanguageHasATranslation()
+        {
+            // osu!lazer's own list of languages, e.g. "pt_br" -> "pt-br".
+            var missing = Enum.GetNames<osu.Game.Localisation.Language>()
+                              .Select(n => n.Replace('_', '-'))
+                              .Where(code => KeyboardStrings.SectionFor(code) == null)
+                              .ToList();
+
+            Assert.That(missing, Is.Empty, "osu! languages without a translation: " + string.Join(", ", missing));
+        }
+
+        [Test]
+        public void TestEveryLanguageTranslatesEveryText()
+        {
+            var keys = KeyboardStrings.AllKeys.ToList();
+            Assert.That(keys, Has.Count.EqualTo(18));
+
+            foreach (string language in KeyboardStrings.Languages)
             {
-                var row = KeyboardStrings.RowFor(key);
-                Assert.That(row, Has.Count.EqualTo(KeyboardStrings.Languages.Length), $"{key} is missing a language");
-                Assert.That(row, Has.All.Not.Empty, $"{key} has an empty translation");
+                foreach (string key in keys)
+                    Assert.That(KeyboardStrings.RawTranslation(language, key), Is.Not.Null.And.Not.Empty, $"[{language}] is missing {key}");
             }
         }
 
+        [TestCase("tr", nameof(KeyboardStrings.KeySpace), "Boşluk")]
+        [TestCase("de", nameof(KeyboardStrings.KeyboardLayout), "Tastaturlayout")]
+        [TestCase("ja", nameof(KeyboardStrings.KeyboardLayout), "キーボード配列")]
+        [TestCase("pt", nameof(KeyboardStrings.KeyboardLayout), "Disposição do teclado")]
+        [TestCase("pt-BR", nameof(KeyboardStrings.KeyboardLayout), "Layout do teclado")]
+        [TestCase("zh-Hans", nameof(KeyboardStrings.KeyboardLayout), "键盘布局")]
+        [TestCase("zh-Hant", nameof(KeyboardStrings.KeyboardLayout), "鍵盤配置")]
+        [TestCase("zh-TW", nameof(KeyboardStrings.KeyboardLayout), "鍵盤配置")]
+        [TestCase("es-419", nameof(KeyboardStrings.HoldSpace), "¡Mantén presionado Espacio!")]
+        [TestCase("es", nameof(KeyboardStrings.HoldSpace), "¡Mantén Espacio!")]
+        [TestCase("hr-HR", nameof(KeyboardStrings.KeySpace), "Razmaknica")]
+        [TestCase("nb", nameof(KeyboardStrings.KeySpace), "Mellomrom")]
+        [TestCase("ko", nameof(KeyboardStrings.KeyboardType), "키보드 종류")]
+        [TestCase("xx", nameof(KeyboardStrings.KeyboardLayout), "Keyboard layout")]
+        [TestCase(null, nameof(KeyboardStrings.KeyboardLayout), "Keyboard layout")]
+        public void TestLanguageLookup(string? language, string key, string expected)
+            => Assert.That(KeyboardStrings.Translate(key, language), Is.EqualTo(expected));
+
         [Test]
-        public void TestLanguageLookup()
+        public void TestTooltipsSayWhenTheyApply()
         {
-            Assert.That(KeyboardStrings.Translate(nameof(KeyboardStrings.KeySpace), "tr"), Is.EqualTo("Boşluk"));
-            Assert.That(KeyboardStrings.Translate(nameof(KeyboardStrings.KeyboardLayout), "de"), Is.EqualTo("Tastaturlayout"));
-            Assert.That(KeyboardStrings.Translate(nameof(KeyboardStrings.KeyboardLayout), "ja"), Is.EqualTo("キーボード配列"));
-            Assert.That(KeyboardStrings.Translate(nameof(KeyboardStrings.KeyboardLayout), "xx"), Is.EqualTo("Keyboard layout"), "unknown language falls back to English");
-            Assert.That(KeyboardStrings.Translate(nameof(KeyboardStrings.KeyboardLayout), null), Is.EqualTo("Keyboard layout"));
+            Assert.That(KeyboardStrings.KeyboardLayoutTooltip.ToString(), Is.EqualTo("What is printed on the keys. Applies the next time a map starts."));
         }
 
         [Test]
-        public void TestDropdownNamesComeFromTheTable()
+        public void TestLayoutNamesAreWrittenInTheirOwnLanguage()
         {
-            // The settings dropdowns show these; they must resolve to our translations, not the raw enum name.
-            foreach (var layout in Enum.GetValues<KeyboardLayoutType>())
-                Assert.That(layout.GetLocalisableDescription().ToString(), Is.Not.EqualTo(layout.ToString()).Or.EqualTo("Dvorak").Or.EqualTo("Colemak"), $"{layout} has no translated name");
+            var names = Enum.GetValues<KeyboardLayoutType>().Select(l => l.GetLocalisableDescription().ToString()).ToList();
 
-            Assert.That(KeyboardLayoutType.TurkishQ.GetLocalisableDescription().ToString(), Is.EqualTo("Turkish Q"));
+            Assert.That(names, Is.Unique);
+            Assert.That(names, Has.None.EqualTo(string.Empty));
+            Assert.That(KeyboardLayoutType.TurkishQ.GetLocalisableDescription().ToString(), Is.EqualTo("Türkçe Q"));
+            Assert.That(KeyboardLayoutType.Korean.GetLocalisableDescription().ToString(), Does.StartWith("한국어"));
             Assert.That(KeyboardType.Iso.GetLocalisableDescription().ToString(), Does.StartWith("ISO"));
         }
 
-        private class FakeCircle : HitObject, IHasPosition
+        private class FakeCircle : HitObject, IHasPosition, IHasCombo
         {
+            public bool NewCombo { get; set; }
+            public int ComboOffset { get; set; }
             public Vector2 Position { get; set; }
             public float X { get => Position.X; set => Position = new Vector2(value, Y); }
             public float Y { get => Position.Y; set => Position = new Vector2(X, value); }

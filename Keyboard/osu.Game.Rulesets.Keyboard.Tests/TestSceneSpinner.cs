@@ -1,4 +1,4 @@
-// Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
+// Copyright (c) 2026 xrayzack1010. Licensed under the MIT Licence.
 // See the LICENCE file in the repository root for full licence text.
 
 using System.Collections.Generic;
@@ -8,6 +8,10 @@ using osu.Game.Beatmaps;
 using osu.Game.Rulesets.Judgements;
 using osu.Game.Rulesets.Keyboard.Objects;
 using osu.Game.Rulesets.Keyboard.Objects.Drawables;
+using osu.Game.Rulesets.Keyboard.UI;
+using osu.Framework.Testing;
+using osu.Framework.Graphics;
+using osu.Framework.Graphics.Shapes;
 using osu.Game.Rulesets.Scoring;
 using osu.Game.Tests.Visual;
 using osuTK.Input;
@@ -48,11 +52,20 @@ namespace osu.Game.Rulesets.Keyboard.Tests
         [Test]
         public void TestHoldingTheWholeTimeIsGreat()
         {
+            DrawableKeyboardSpinner? drawable = null;
+            float circleAtEnd = 0;
+
             startPlay();
+            AddUntilStep("spinner on screen", () => (drawable = Player.DrawableRuleset.Playfield.AllHitObjects.OfType<DrawableKeyboardSpinner>().FirstOrDefault(s => s.IsAlive)) != null);
+            AddAssert("no progress circle yet", () => drawable!.ProgressDiameter == 0);
+            AddAssert("no masked circles (they leaked colour past the rounded corners)", () => !drawable!.ChildrenOfType<Circle>().Any());
+            AddAssert("drawn in the combo colour", () => drawable!.ApproachColour == (Colour4)drawable.AccentColour.Value);
+            AddStep("remember the circle when judged", () => Player.ScoreProcessor.NewJudgement += _ => circleAtEnd = drawable!.ProgressDiameter);
             AddStep("hold space before the spinner starts", () => InputManager.PressKey(Key.Space));
             AddUntilStep("spinner judged", () => results.Count == 1);
             AddStep("let go", () => InputManager.ReleaseKey(Key.Space));
             AddAssert("judged Great", () => results[0].Type == HitResult.Great);
+            AddAssert("the circle grew out to (nearly) cover the bar", () => circleAtEnd >= drawable!.FullDiameter * 0.9f);
         }
 
         [Test]
@@ -84,7 +97,21 @@ namespace osu.Game.Rulesets.Keyboard.Tests
                 Assert.That(ratio, Is.InRange(0.05, 0.95), "should have been a partial hold");
                 Assert.That(results[0].Type, Is.EqualTo(KeyboardSpinner.ResultFor(ratio)), $"held {ratio:P0}");
                 Assert.That(results[0].Type, Is.Not.EqualTo(HitResult.Great), "letting go early must not be Great");
+                Assert.That(drawable!.ProgressDiameter, Is.EqualTo(drawable.FullDiameter * (float)ratio).Within(1f), "circle size follows the share held");
             });
+        }
+
+        [Test]
+        public void TestSpaceLabelIsHiddenWhileTheSpinnerIsOnIt()
+        {
+            KeyLabel space() => Player.DrawableRuleset.Playfield.ChildrenOfType<KeyLabel>().Single(k => k.Action == KeyboardAction.Space);
+
+            startPlay();
+            AddAssert("label shown before the spinner", () => space().IsLabelVisible);
+            AddUntilStep("spinner on screen", () => Player.DrawableRuleset.Playfield.AllHitObjects.OfType<DrawableKeyboardSpinner>().Any(s => s.IsAlive));
+            AddUntilStep("label hidden under the spinner", () => !space().IsLabelVisible);
+            AddUntilStep("spinner judged", () => results.Count == 1);
+            AddUntilStep("label back afterwards", () => space().IsLabelVisible);
         }
 
         [Test]

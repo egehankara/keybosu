@@ -1,4 +1,4 @@
-// Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
+// Copyright (c) 2026 xrayzack1010. Licensed under the MIT Licence.
 // See the LICENCE file in the repository root for full licence text.
 
 using System;
@@ -79,15 +79,34 @@ namespace osu.Game.Rulesets.Keyboard.Tests
             Assert.That(space.Width, Is.GreaterThan(4), "space is a long bar");
         }
 
-        [Test]
-        public void TestIsoHasTallEnterAndAnsiHasFlatEnter()
+        [TestCaseSource(nameof(allCombinations))]
+        public void TestNoEnterKeyIsDrawn(KeyboardLayoutType layoutType, KeyboardType type)
         {
-            var ansi = KeyboardLayout.Create(KeyboardLayoutType.EnglishQwerty, KeyboardType.Ansi).Decorations.Single(d => d.Label == "Enter");
-            var iso = KeyboardLayout.Create(KeyboardLayoutType.EnglishQwerty, KeyboardType.Iso).Decorations.Single(d => d.Label == "Enter");
+            var layout = KeyboardLayout.Create(layoutType, type);
+            Assert.That(layout.Decorations.Select(d => d.Label), Has.None.EqualTo("Enter"));
+        }
 
-            Assert.That(ansi.Height, Is.EqualTo(1f), "ANSI Enter is one row tall");
-            Assert.That(ansi.Width, Is.GreaterThan(1f), "ANSI Enter is wider than a normal key");
-            Assert.That(iso.Height, Is.EqualTo(2f), "ISO Enter spans two rows");
+        [TestCaseSource(nameof(allCombinations))]
+        public void TestSpaceBarSitsLikeOnARealKeyboard(KeyboardLayoutType layoutType, KeyboardType type)
+        {
+            var layout = KeyboardLayout.Create(layoutType, type);
+            var space = layout[KeyboardAction.Space];
+            var x = layout[KeyboardAction.X];
+            var comma = layout[KeyboardAction.Comma];
+            float end = space.X + space.Width;
+
+            // Like a real keyboard: it just touches X and covers a bit more than half of the comma key.
+            Assert.That(space.X, Is.InRange(x.X + 0.5f, x.X + 1), "starts in the right half of X");
+            Assert.That(end, Is.InRange(comma.X + 0.5f, comma.X + 1), "ends past the middle of the comma key");
+        }
+
+        [Test]
+        public void TestSettingsListsEveryLayoutOnceMostUsedFirst()
+        {
+            Assert.That(KeyboardLayout.BY_POPULARITY, Is.Unique);
+            Assert.That(KeyboardLayout.BY_POPULARITY, Is.EquivalentTo(Enum.GetValues<KeyboardLayoutType>()), "every layout must be listed exactly once");
+            Assert.That(KeyboardLayout.BY_POPULARITY[0], Is.EqualTo(KeyboardLayoutType.EnglishQwerty));
+            Assert.That(KeyboardLayout.BY_POPULARITY[^1], Is.EqualTo(KeyboardLayoutType.Colemak), "enthusiast layouts last");
         }
 
         [Test]

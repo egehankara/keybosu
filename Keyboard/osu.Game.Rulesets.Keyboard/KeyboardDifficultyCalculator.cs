@@ -1,4 +1,4 @@
-// Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
+// Copyright (c) 2026 xrayzack1010. Licensed under the MIT Licence.
 // See the LICENCE file in the repository root for full licence text.
 
 using System;
@@ -9,6 +9,7 @@ using osu.Game.Rulesets.Difficulty;
 using osu.Game.Rulesets.Difficulty.Preprocessing;
 using osu.Game.Rulesets.Difficulty.Skills;
 using osu.Game.Rulesets.Mods;
+using osu.Game.Utils;
 
 namespace osu.Game.Rulesets.Keyboard
 {
@@ -27,7 +28,9 @@ namespace osu.Game.Rulesets.Keyboard
                 return new DifficultyAttributes(mods, 0);
 
             // Placeholder rating: just note density (notes per second). A real skill model can replace this later.
-            double seconds = Math.Max(1, (objects[^1].StartTime - objects[0].StartTime) / 1000);
+            // Rate mods (DoubleTime, HalfTime) squeeze or stretch the map in real time, so they change the density.
+            double rate = ModUtils.CalculateRateWithMods(mods);
+            double seconds = Math.Max(1, (objects[^1].StartTime - objects[0].StartTime) / 1000 / rate);
             double notesPerSecond = objects.Count / seconds;
 
             return new DifficultyAttributes(mods, Math.Pow(notesPerSecond, 0.9) * 0.5)

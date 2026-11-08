@@ -1,79 +1,93 @@
-# osu!keyboard
+# keybosu!
 
-A custom [osu!lazer](https://github.com/ppy/osu) ruleset where the whole keyboard is the playfield.
+A custom ruleset for [osu!lazer](https://github.com/ppy/osu) where the whole keyboard is the playfield.
 
-Every key (A–Z plus the punctuation keys next to the letters) is a square on screen. A coloured square
-grows inside a key; press that key the moment it fills the cell.
+Every letter key - plus the punctuation keys next to the letters - is a square on screen. A coloured square grows
+inside a key; **press that key the moment it fills the key**. Spinners become a hold on the Space bar.
+Any existing osu! beatmap can be played: it is converted automatically.
 
-## Features
+## How it plays
 
-- Converts any existing osu! beatmap: each note's position is mapped to the nearest key.
-- **Spinners** become a hold on the Space bar: hold Space for the whole spinner. Held 90%+ is Great,
-  60%+ Ok, 30%+ Meh, otherwise Miss. (Taiko swells and catch banana showers convert the same way.)
-- On-screen keyboard scaled to any window size. Settings under Settings > Ruleset > Keyboard:
-  - **Keyboard layout** (what is printed on the keys): English (QWERTY), Turkish Q, Turkish F,
-    German (QWERTZ), French (AZERTY), Spanish, Russian (ЙЦУКЕН), Dvorak, Colemak.
-  - **Keyboard type**: ANSI (flat Enter, `\` on the top row) or ISO (tall Enter, extra key left of Z).
-  - **Highlight home row keys** (on by default): the eight keys your fingers rest on get a bright edge,
-    with a bump on the two index-finger keys like a real keyboard. Picked by position, so it is right in every layout.
-  - **Screen centre**: which part sits exactly in the middle of the screen: the whole keyboard, the Space bar,
-    or the boundary between G and H.
-  - **Show judgements** (on by default): Perfect / Great / Good / Ok / Meh / Miss appears small under the letter
-    of the key you hit, using your skin's own judgement graphics, and fades after about half a second.
-  All settings are saved and apply the next time a map starts.
-- The settings follow osu!lazer's language: English, Turkish, German, Spanish, French, Japanese and Russian
-  (anything else falls back to English). Texts live in `Localisation/KeyboardStrings.cs`.
-- Timing judgements (± ms at OD 5, tighter at higher OD): Perfect 19 (305 points), Great 49 (300), Good 82 (200),
-  Ok 112 (100), Meh 136 (50). Pressing much too early is a Miss. Windows are in `Objects/KeyboardHitWindows.cs`.
-- Two notes on the same key are never on screen at the same time: the next one only starts filling once the
-  previous one is over (worked out from the map's approach rate).
-- Mods: Autoplay, NoFail, HalfTime, DoubleTime.
-- The 33 letter and punctuation keys are identical in every layout and keyboard type, so beatmap conversion
-  never depends on what you picked.
+- **Notes:** each note of the original map goes to the key nearest to where it was on the osu! playfield
+  (top of the screen → top letter row, bottom → bottom row). A key never shows two notes at once: the next one
+  only appears when the previous one is over.
+- **Spinners** (and taiko swells / catch banana showers) become a hold on the Space bar. Hold Space for the whole
+  spinner: a circle grows out from the middle as you hold. 90%+ is Great, 60%+ Ok, 30%+ Meh, otherwise Miss.
+- **Timing** is exactly osu!standard's (300 / 100 / 50): ±49.5 / 99.5 / 149.5 ms at OD 5, the same OD curves and
+  rounding, and pressing up to 400 ms early is a Miss.
+- **Approach:** squares fill as fast as the map's approach rate (AR) says, like osu!.
+- **Colours** are the combo colours, like osu!: from the map when osu!'s "Beatmap colours" setting is on, otherwise
+  from your skin's `skin.ini` (`Combo1`, `Combo2`, ...), moving to the next colour at every new combo.
+- **Judgements** (Great / Ok / Meh / Miss) appear small under the letter of the key you hit, using your skin's own
+  graphics (legacy skins: `hit300` / `hit100` / `hit50` / `hit0`).
+- After a **pause**, the same 3-2-1 countdown as osu!mania plays before the map continues.
+- Mods: Autoplay, NoFail, HalfTime, DoubleTime. Input is read by physical key position, so your OS keyboard
+  language does not matter.
 
-## Notes
+## Settings
 
-- The extra keys (ANSI backslash, ISO key left of Z) and Enter are drawn dimmed and never get notes.
-  The ISO home-row key osu!framework cannot read at all, so it is only drawn.
-- Input is read by physical key position, so the OS keyboard language does not matter.
-- While osu!lazer offers "skip intro", it takes Space for itself. A spinner right at the very start of a map
-  therefore only counts once the skip button is gone (press Space again).
-- **Never renumber `KeyboardAction`.** lazer stores key bindings by number; changing one makes saved bindings
-  point at the wrong keys, and two actions on one key makes lazer wipe that key. `TestActionNumbering` guards this.
+Under *Settings → Ruleset → keybosu!*, in osu!'s current settings style:
 
-## Tests
+| Setting | What it does |
+|---|---|
+| **Keyboard layout** | What is printed on the keys. One layout for every language osu! supports, without duplicates (29, named in their own language, most used first). English QWERTY also covers Indonesian, Filipino, Malay, Dutch, Polish, Lithuanian, Latvian, Vietnamese and Chinese; Spanish covers Catalan. Plus Turkish F, Dvorak and Colemak. |
+| **Keyboard type** | ANSI (flat Enter) or ISO (tall Enter, extra key left of Z). |
+| **Screen centre** | Which point sits exactly in the middle of the screen: the whole keyboard, the Space bar, or the point between the index fingers (halfway between F and J). |
+| **Highlight home row keys** | Gives the eight keys your fingers rest on a lighter colour. The bumps on the index-finger keys are always shown. |
+| **Show judgements** | Turns the Great / Ok / Meh / Miss text under the keys on or off. |
+
+Settings apply the next time a map starts. All texts are translated into the 39 languages osu! supports and follow
+osu!'s own language setting (`Keyboard/osu.Game.Rulesets.Keyboard/Resources/Localisation/translations.ini`).
+
+## Install
+
+1. Download `osu.Game.Rulesets.Keyboard.dll` from the [latest release](../../releases/latest).
+2. Put it in the `rulesets` folder of your osu!lazer data folder (create the folder if it is missing):
+   - Linux: `~/.local/share/osu/rulesets/`
+   - Windows: `%AppData%\osu\rulesets\`
+   - macOS: `~/Library/Application Support/osu/rulesets/`
+3. Restart osu!lazer. **keybosu!** appears in the ruleset selector.
+
+From source (needs the .NET SDK): `./install.sh` builds the ruleset and copies it to the Linux folder above
+(set `OSU_DATA` for another data folder).
+
+**Compatibility:** built for ruleset API `2026.818.0` and checked against osu!lazer 2026.1005. If an osu!lazer
+update changes the ruleset API, the ruleset has to be rebuilt.
+
+## Good to know
+
+- Custom rulesets never award PP.
+- The extra keys (ANSI backslash, ISO key left of Z) are drawn dimmed and never get notes. The ISO key at the end of
+  the home row cannot be read by osu!framework at all, so it is only drawn.
+- While osu!lazer offers "skip intro" it takes Space for itself, so a spinner right at the very start of a map only
+  counts once the skip button is gone. Pausing during a break or the intro resumes without a countdown (as in osu!mania).
+- Not done yet: replay recording (Autoplay works) and a real star-rating model (currently note density only).
+
+## Development
 
 ```sh
 dotnet test Keyboard/osu.Game.Rulesets.Keyboard.Tests -c Release
 ```
 
-Runs headless. It presses every key through the real input pipeline, loads real plays on each keyboard type,
-plays spinners (full hold, no hold, partial hold, autoplay), and checks layouts, conversion and translations.
+The tests run headless. They press every key through the real input pipeline, load real plays on every keyboard
+type, play spinners and autoplay, pause and resume, measure the layout on screen, and check conversion, judgements,
+translations and settings.
 
-## Not done yet
+**Never renumber `KeyboardAction`** and never change `ShortName` (`keyboard`): osu!lazer stores key bindings by
+those numbers, and settings, bindings and scores under that name. `TestActionNumbering` and `TestRulesetName` guard this.
 
-- Replay recording (autoplay works).
-- A real star-rating model (currently note density only).
+## Licence
 
-Custom rulesets never award PP.
+[MIT](LICENCE). The project layout and a few unchanged files come from the
+[osu! ruleset templates](https://github.com/ppy/osu-templates) by ppy Pty Ltd, also MIT.
+keybosu! is a fan-made ruleset and is not affiliated with ppy.
 
-## Install
+---
 
-Requires the .NET SDK and osu!lazer.
+## Türkçe
 
-```sh
-./install.sh
-```
-
-This builds the ruleset and copies `osu.Game.Rulesets.Keyboard.dll` to `~/.local/share/osu/rulesets`.
-Restart osu!lazer afterwards. Set `OSU_DATA` to use a different data directory.
-
-The ruleset must be built against a `ppy.osu.Game` package whose ruleset API version matches your installed
-lazer (checked: `2026.818.0`). After a lazer update, rebuild with `./install.sh`.
-
-## Layout
-
-- `Keyboard/osu.Game.Rulesets.Keyboard` – the ruleset
-- `Keyboard/osu.Game.Rulesets.Keyboard.Tests` – visual test project from the official template
-
-Generated from the [osu! ruleset template](https://github.com/ppy/osu-templates); template files are under the MIT licence.
+**keybosu!**, bütün klavyenin oyun alanı olduğu bir osu!lazer ruleset'i. Tuşların içinde renkli kareler büyür, kare
+tuşu doldurduğu anda o tuşa basarsın. Spinner'larda Space'e basılı tutarsın. Bütün osu! haritaları otomatik olarak
+dönüştürülür. Zamanlama osu!standard ile birebir aynıdır, renkler skin'inin ya da haritanın combo renkleridir.
+Ayarlar (klavye düzeni, klavye türü, ekran merkezi, temel sıra vurgusu, isabet dereceleri) osu!'nun desteklediği
+39 dile çevrilidir. Kurulum için yukarıdaki *Install* bölümüne bak. Özel rulesetler PP vermez.

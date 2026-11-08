@@ -1,4 +1,4 @@
-// Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
+// Copyright (c) 2026 xrayzack1010. Licensed under the MIT Licence.
 // See the LICENCE file in the repository root for full licence text.
 
 using System;
@@ -23,12 +23,6 @@ namespace osu.Game.Rulesets.Keyboard.Beatmaps
         private const float osu_width = 512;
         private const float osu_height = 384;
 
-        /// <summary>
-        /// Extra time after a note before the next note on the same key may start filling: covers the late
-        /// hit window and the hit animation, so the key is completely empty again.
-        /// </summary>
-        private const double same_key_clearance = 200;
-
         /// <summary>Never closer than this, even on maps with a very high approach rate.</summary>
         private const double min_same_key_gap = 350;
 
@@ -39,11 +33,26 @@ namespace osu.Game.Rulesets.Keyboard.Beatmaps
         private double? sameKeyGap;
 
         private readonly KeyboardLayout layout = KeyboardLayout.Default;
+
+        /// <summary>Keys notes can land on: every playable key except Space (Space is only for spinners).</summary>
+        private readonly KeyDefinition[] noteKeys;
+
+        /// <summary>
+        /// The rectangle, in key units, covered by <see cref="noteKeys"/>. osu! positions are stretched over this area
+        /// only, so the bottom of the osu! playfield maps to the bottom letter row rather than to the empty Space row.
+        /// </summary>
+        private readonly float areaLeft, areaTop, areaWidth, areaHeight;
         private readonly Dictionary<KeyboardAction, SortedSet<double>> usedTimes = new Dictionary<KeyboardAction, SortedSet<double>>();
 
         public KeyboardBeatmapConverter(IBeatmap beatmap, Ruleset ruleset)
             : base(beatmap, ruleset)
         {
+            noteKeys = layout.Keys.Where(k => k.Playable && k.Action != KeyboardAction.Space).ToArray();
+
+            areaLeft = noteKeys.Min(k => k.X);
+            areaTop = noteKeys.Min(k => k.Y);
+            areaWidth = noteKeys.Max(k => k.X + k.Width) - areaLeft;
+            areaHeight = noteKeys.Max(k => k.Y + 1) - areaTop;
         }
 
         public override bool CanConvert() => true;
@@ -52,7 +61,7 @@ namespace osu.Game.Rulesets.Keyboard.Beatmaps
         {
             // A note starts filling TimePreempt before it is due (same formula as KeyboardHitObject).
             sameKeyGap ??= Math.Max(min_same_key_gap,
-                IBeatmapDifficultyInfo.DifficultyRange(beatmap.Difficulty.ApproachRate, 1800, 1200, 450) + same_key_clearance);
+                IBeatmapDifficultyInfo.DifficultyRange(beatmap.Difficulty.ApproachRate, 1800, 1200, 450) + KeyboardHitObject.SAME_KEY_CLEARANCE);
 
             var random = new Random((int)original.StartTime);
 
@@ -67,38 +76,70 @@ namespace osu.Game.Rulesets.Keyboard.Beatmaps
                     int repeats = (original as IHasRepeats)?.RepeatCount ?? 0;
                     Vector2 endPosition = repeats % 2 == 0 ? startPosition + path.Path.PositionAt(1) : startPosition;
 
-                    yield return create(original.StartTime, nodeSamples(original, true), target(startPosition, hasPosition, random));
+                    yield return withCombo(create(original.StartTime, nodeSamples(original, true), target(startPosition, hasPosition, random)), original);
                     yield return create(duration.EndTime, nodeSamples(original, false), target(endPosition, hasPosition, random));
                 }
                 else if (original is IHasColumn)
                 {
                     // osu!mania hold notes are long but not spinners: just a note where they start.
-                    yield return create(original.StartTime, original.Samples, target(startPosition, hasPosition, random));
+                    yield return withCombo(create(original.StartTime, original.Samples, target(startPosition, hasPosition, random)), original);
                 }
                 else
                 {
                     // Spinner (and taiko swells, catch banana showers): hold Space for its whole length.
-                    yield return new KeyboardSpinner
+                    yield return withCombo(new KeyboardSpinner
                     {
                         StartTime = original.StartTime,
                         Duration = duration.Duration,
                         Samples = original.Samples,
-                    };
+                    }, original);
                 }
 
                 yield break;
             }
 
-            yield return create(original.StartTime, original.Samples, target(startPosition, hasPosition, random));
+            yield return withCombo(create(original.StartTime, original.Samples, target(startPosition, hasPosition, random)), original);
+        }
+
+        /// <summary>Copies where combos start (and the mapper's colour offset), so combo colours change like in the original map.</summary>
+        private static KeyboardHitObject withCombo(KeyboardHitObject note, HitObject original)
+        {
+            if (original is IHasCombo combo)
+            {
+                note.NewCombo = combo.NewCombo;
+                note.ComboOffset = combo.ComboOffset;
+            }
+
+            return note;
+        }
+
+        protected override Beatmap<KeyboardHitObject> ConvertBeatmap(IBeatmap original, CancellationToken cancellationToken)
+        {
+            var beatmap = base.ConvertBeatmap(original, cancellationToken);
+
+            // Tell every note when the key it uses is free again, so it never appears while the previous note is still there.
+            foreach (var notesOnKey in beatmap.HitObjects.GroupBy(h => h.Key))
+            {
+                double previousEnd = double.NegativeInfinity;
+
+                foreach (var note in notesOnKey.OrderBy(h => h.StartTime))
+                {
+                    note.PreviousOnSameKey = previousEnd;
+                    previousEnd = note.GetEndTime();
+                }
+            }
+
+            return beatmap;
         }
 
         /// <summary>Converts an osu! position into key units. Objects without a position get a deterministic random one.</summary>
         private Vector2 target(Vector2 position, bool hasPosition, Random random)
         {
-            if (!hasPosition)
-                return new Vector2(random.NextSingle() * layout.Width, random.NextSingle() * layout.Height);
+            Vector2 fraction = hasPosition
+                ? new Vector2(position.X / osu_width, position.Y / osu_height)
+                : new Vector2(random.NextSingle(), random.NextSingle());
 
-            return new Vector2(position.X / osu_width * layout.Width, position.Y / osu_height * layout.Height);
+            return new Vector2(areaLeft + fraction.X * areaWidth, areaTop + fraction.Y * areaHeight);
         }
 
         private KeyboardHitObject create(double time, IList<HitSampleInfo> samples, Vector2 target)
@@ -113,7 +154,7 @@ namespace osu.Game.Rulesets.Keyboard.Beatmaps
 
         private KeyboardAction pickKey(Vector2 target, double time)
         {
-            var byDistance = layout.Keys.Where(k => k.Playable && k.Action != KeyboardAction.Space).OrderBy(k => Vector2.DistanceSquared(k.Centre, target)).ToList();
+            var byDistance = noteKeys.OrderBy(k => Vector2.DistanceSquared(k.Centre, target)).ToList();
 
             // Nearest key that has not been used around this time; if every key is busy, just take the nearest.
             var chosen = byDistance.Cast<KeyDefinition?>().FirstOrDefault(k => isFree(k!.Value.Action, time)) ?? byDistance[0];

@@ -1,4 +1,4 @@
-// Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
+// Copyright (c) 2026 xrayzack1010. Licensed under the MIT Licence.
 // See the LICENCE file in the repository root for full licence text.
 
 using System.Linq;
@@ -71,12 +71,13 @@ namespace osu.Game.Rulesets.Keyboard.Tests
                 var notes = Player.DrawableRuleset.Playfield.AllHitObjects.OfType<DrawableKeyboardHitObject>().ToList();
                 var layout = ((KeyboardPlayfield)Player.DrawableRuleset.Playfield).Layout;
 
-                bool inside = notes.All(n => n.Position.X > 0 && n.Position.X < 1 && n.Position.Y > 0 && n.Position.Y < 1 && n.Size.X > 0);
+                float width = layout.Width * KeyboardPlayfield.KEY_SIZE, height = layout.Height * KeyboardPlayfield.KEY_SIZE;
+                bool inside = notes.All(n => n.Position.X > 0 && n.Position.X < width && n.Position.Y > 0 && n.Position.Y < height && n.Size.X > 0);
                 bool distinctKeys = notes.Select(n => n.HitObject.Key).Distinct().Count() == notes.Count;
                 bool matchesLayout = notes.All(n =>
                 {
                     var key = layout[n.HitObject.Key];
-                    return System.Math.Abs(n.Position.X - key.Centre.X / layout.Width) < 0.0001f && System.Math.Abs(n.Position.Y - key.Centre.Y / layout.Height) < 0.0001f;
+                    return (n.Position - key.Centre * KeyboardPlayfield.KEY_SIZE).Length < 0.01f;
                 });
 
                 return inside && distinctKeys && matchesLayout;

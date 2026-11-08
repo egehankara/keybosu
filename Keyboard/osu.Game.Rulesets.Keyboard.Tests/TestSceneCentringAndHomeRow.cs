@@ -1,4 +1,4 @@
-// Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
+// Copyright (c) 2026 xrayzack1010. Licensed under the MIT Licence.
 // See the LICENCE file in the repository root for full licence text.
 
 using System;
@@ -92,9 +92,33 @@ namespace osu.Game.Rulesets.Keyboard.Tests
 
                 Assert.That(pointX, Is.EqualTo(screenCentreX).Within(1f), $"{centring} point is {pointX - screenCentreX:0.0}px off centre");
 
+                // At least the side margin of empty space on both sides (within a pixel).
                 var screen = Player.ScreenSpaceDrawQuad;
-                Assert.That(all.Min(k => k.ScreenSpaceDrawQuad.TopLeft.X), Is.GreaterThanOrEqualTo(screen.TopLeft.X - 0.5f), "keyboard goes off the left edge");
-                Assert.That(all.Max(k => k.ScreenSpaceDrawQuad.TopRight.X), Is.LessThanOrEqualTo(screen.TopRight.X + 0.5f), "keyboard goes off the right edge");
+                float margin = screen.Width * KeyboardPlayfield.SIDE_MARGIN;
+                float leftGap = all.Min(k => k.ScreenSpaceDrawQuad.TopLeft.X) - screen.TopLeft.X;
+                float rightGap = screen.TopRight.X - all.Max(k => k.ScreenSpaceDrawQuad.TopRight.X);
+                Assert.That(leftGap, Is.GreaterThanOrEqualTo(margin - 1), $"only {leftGap:0}px free on the left");
+                Assert.That(rightGap, Is.GreaterThanOrEqualTo(margin - 1), $"only {rightGap:0}px free on the right");
+            });
+        }
+
+        [Test]
+        public void TestLettersAreDrawnAboveTheNotes()
+        {
+            play(KeyboardLayoutType.TurkishQ, KeyboardType.Iso, KeyboardCentring.WholeKeyboard);
+
+            AddAssert("every key and shape has a letter", () =>
+            {
+                var layout = ((KeyboardPlayfield)Player.DrawableRuleset.Playfield).Layout;
+                return Player.DrawableRuleset.Playfield.ChildrenOfType<KeyLabel>().Count() == layout.Keys.Count + layout.Decorations.Count;
+            });
+            AddAssert("the letter layer comes after (on top of) the notes", () =>
+            {
+                var notes = Player.DrawableRuleset.Playfield.HitObjectContainer;
+                var letters = Player.DrawableRuleset.Playfield.ChildrenOfType<KeyLabel>().First().Parent!;
+                var space = (osu.Framework.Graphics.Containers.Container<osu.Framework.Graphics.Drawable>)notes.Parent!;
+
+                return letters.Parent == space && space.IndexOf(letters) > space.IndexOf(notes);
             });
         }
 
@@ -114,7 +138,9 @@ namespace osu.Game.Rulesets.Keyboard.Tests
         {
             play(KeyboardLayoutType.TurkishQ, KeyboardType.Iso, KeyboardCentring.WholeKeyboard, homeRow: false);
 
-            AddAssert("no key is highlighted", () => !keys.Any(k => k.IsHomeRowHighlighted || k.HasBump));
+            AddAssert("no key is highlighted", () => !keys.Any(k => k.IsHomeRowHighlighted));
+            AddAssert("F and J still have their bumps", () =>
+                keys.Where(k => k.HasBump).Select(k => k.Action!.Value).OrderBy(a => a).SequenceEqual(new[] { KeyboardAction.F, KeyboardAction.J }));
         }
 
         [Test]

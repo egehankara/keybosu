@@ -1,6 +1,7 @@
-// Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
+// Copyright (c) 2026 xrayzack1010. Licensed under the MIT Licence.
 // See the LICENCE file in the repository root for full licence text.
 
+using System;
 using osu.Framework.Allocation;
 using osu.Framework.Graphics;
 using osu.Framework.Graphics.Containers;
@@ -22,7 +23,7 @@ namespace osu.Game.Rulesets.Keyboard.Objects.Drawables
     {
         private Container fill = null!;
 
-        protected override double InitialLifetimeOffset => HitObject.TimePreempt;
+        protected override double InitialLifetimeOffset => HitObject.AppearOffset;
 
         public DrawableKeyboardHitObject(KeyboardHitObject hitObject)
             : base(hitObject)
@@ -37,10 +38,10 @@ namespace osu.Game.Rulesets.Keyboard.Objects.Drawables
             var layout = playfield.Layout;
             var key = layout[HitObject.Key];
 
-            RelativePositionAxes = Axes.Both;
-            RelativeSizeAxes = Axes.Both;
-            Size = new Vector2(1f / layout.Width, 1f / layout.Height);
-            Position = new Vector2(key.Centre.X / layout.Width, key.Centre.Y / layout.Height);
+            // Absolute positions in the playfield's fixed keyboard space (not fractions), so effects that move notes
+            // by pixels - like lazer's fail animation - move them a sensible distance.
+            Size = new Vector2(KeyboardPlayfield.KEY_SIZE);
+            Position = key.Centre * KeyboardPlayfield.KEY_SIZE;
 
             AddInternal(new Container
             {
@@ -53,12 +54,24 @@ namespace osu.Game.Rulesets.Keyboard.Objects.Drawables
                     Origin = Anchor.Centre,
                     Masking = true,
                     CornerRadius = 8,
-                    // Colour follows the key's horizontal position, so the keyboard reads as a rainbow.
-                    Colour = Colour4.FromHSV(key.X / layout.Width, 0.55f, 1f),
                     Alpha = 0.85f,
                     Child = new Box { RelativeSizeAxes = Axes.Both },
                 }
             });
+        }
+
+        /// <summary>The colour the square is drawn in.</summary>
+        public Colour4 NoteColour => fill.Colour.TopLeft.SRGB;
+
+        protected override void Update()
+        {
+            base.Update();
+
+            // lazer keeps AccentColour set to the combo colour: from the map if "Beatmap colours" is on, otherwise from
+            // the skin's skin.ini, and updates it when the skin changes. Read it every frame until the note is judged
+            // (after that the hit / miss animation owns the colour).
+            if (!Judged)
+                fill.Colour = AccentColour.Value;
         }
 
         protected override void UpdateInitialTransforms()
@@ -66,7 +79,8 @@ namespace osu.Game.Rulesets.Keyboard.Objects.Drawables
             base.UpdateInitialTransforms();
 
             this.FadeInFromZero(150);
-            fill.ScaleTo(0.02f).ScaleTo(1f, HitObject.TimePreempt);
+            // Constant growth speed: a note that has to appear late starts part-way full.
+            fill.ScaleTo(Math.Max(0.02f, HitObject.InitialFill)).ScaleTo(1f, HitObject.AppearOffset);
         }
 
         public bool OnPressed(KeyBindingPressEvent<KeyboardAction> e)

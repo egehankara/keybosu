@@ -1,9 +1,10 @@
-// Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
+// Copyright (c) 2026 xrayzack1010. Licensed under the MIT Licence.
 // See the LICENCE file in the repository root for full licence text.
 
 using System.Collections.Generic;
 using System.Linq;
 using NUnit.Framework;
+using osu.Framework.Graphics.Sprites;
 using osu.Framework.Testing;
 using osu.Game.Beatmaps;
 using osu.Game.Rulesets.Judgements;
@@ -68,7 +69,8 @@ namespace osu.Game.Rulesets.Keyboard.Tests
                 var key = Player.DrawableRuleset.Playfield.ChildrenOfType<KeyBackground>().Single(k => k.Action == KeyboardAction.H).ScreenSpaceDrawQuad;
                 var centre = judgement.ScreenSpaceDrawQuad.Centre;
 
-                Assert.That(judgement.Result!.Type, Is.EqualTo(HitResult.Perfect));
+                Assert.That(judgement.Result!.Type, Is.EqualTo(HitResult.Great));
+                Assert.That(judgement.ChildrenOfType<SpriteText>().Single().Text.ToString(), Is.EqualTo("GREAT"), "the drawn graphic must match the result");
                 Assert.That(centre.X, Is.InRange(key.TopLeft.X, key.TopRight.X), "not inside the key horizontally");
                 Assert.That(centre.Y, Is.InRange(key.Centre.Y, key.BottomLeft.Y), "not in the lower half of the key (under the letter)");
                 Assert.That(judgement.ScreenSpaceDrawQuad.Width, Is.LessThan(key.Width), "bigger than the key");

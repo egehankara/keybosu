@@ -1,4 +1,4 @@
-// Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
+// Copyright (c) 2026 xrayzack1010. Licensed under the MIT Licence.
 // See the LICENCE file in the repository root for full licence text.
 
 using osu.Framework.Graphics;
@@ -8,7 +8,7 @@ using osuTK;
 namespace osu.Game.Rulesets.Keyboard.UI
 {
     /// <summary>
-    /// osu!'s own skinnable judgement (Perfect, Great, Miss... or your skin's 300/100/50 images),
+    /// osu!'s own skinnable judgement (Great, Ok, Meh, Miss - or your skin's hit300 / hit100 / hit50 / hit0 images),
     /// shrunk to fit inside a key and placed under its letter so it never covers the next notes.
     /// </summary>
     public partial class KeyboardJudgement : DrawableJudgement
