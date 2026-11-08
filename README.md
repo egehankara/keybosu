@@ -2,6 +2,10 @@
 
 A custom ruleset for [osu!lazer](https://github.com/ppy/osu) where the whole keyboard is the playfield.
 
+![keybosu! gameplay: coloured squares growing inside the keys of an on-screen keyboard](docs/images/gameplay.png)
+
+**[Download the latest release](../../releases/latest)** · [How to install](#install) · [Türkçe](#türkçe)
+
 Every letter key - plus the punctuation keys next to the letters - is a square on screen. A coloured square grows
 inside a key; **press that key the moment it fills the key**. Spinners become a hold on the Space bar.
 Any existing osu! beatmap can be played: it is converted automatically.
@@ -23,6 +27,8 @@ Any existing osu! beatmap can be played: it is converted automatically.
 - After a **pause**, the same 3-2-1 countdown as osu!mania plays before the map continues.
 - Mods: Autoplay, NoFail, HalfTime, DoubleTime. Input is read by physical key position, so your OS keyboard
   language does not matter.
+
+![A spinner on the Space bar: a circle grows out from the middle while Space is held](docs/images/spinner.png)
 
 ## Settings
 
@@ -79,7 +85,7 @@ those numbers, and settings, bindings and scores under that name. `TestActionNum
 ## Licence
 
 [MIT](LICENCE). The project layout and a few unchanged files come from the
-[osu! ruleset templates](https://github.com/ppy/osu-templates) by ppy Pty Ltd, also MIT.
+[osu! ruleset templates](https://github.com/ppy/osu-templates) by ppy Pty Ltd, also MIT (see [NOTICE](NOTICE)).
 keybosu! is a fan-made ruleset and is not affiliated with ppy.
 
 ---

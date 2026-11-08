@@ -19,11 +19,3 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
-
---------------------------------------------------------------------------------
-
-The project layout and a few unchanged files (VisualTestRunner.cs,
-TestSceneOsuGame.cs, TestSceneOsuPlayer.cs and the editor/build configuration)
-come from the osu! ruleset templates (https://github.com/ppy/osu-templates):
-
-Copyright (c) ppy Pty Ltd <contact@ppy.sh>, licensed under the MIT Licence.
