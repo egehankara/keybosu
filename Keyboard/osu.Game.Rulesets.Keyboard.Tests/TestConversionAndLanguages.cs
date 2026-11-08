@@ -2,13 +2,18 @@
 // See the LICENCE file in the repository root for full licence text.
 
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using NUnit.Framework;
 using osu.Framework.Extensions;
+using osu.Game.Audio;
 using osu.Game.Beatmaps;
+using osu.Game.Beatmaps.ControlPoints;
+using osu.Game.Localisation;
 using osu.Game.Rulesets.Keyboard.Beatmaps;
 using osu.Game.Rulesets.Keyboard.Localisation;
 using osu.Game.Rulesets.Keyboard.Objects;
+using osu.Game.Rulesets.Mods;
 using osu.Game.Rulesets.Objects;
 using osu.Game.Rulesets.Objects.Types;
 using osu.Game.Rulesets.Scoring;
@@ -24,6 +29,64 @@ namespace osu.Game.Rulesets.Keyboard.Tests
             var source = new Beatmap<HitObject>();
             source.HitObjects.AddRange(objects);
             return (Beatmap<KeyboardHitObject>)new KeyboardBeatmapConverter(source, new KeyboardRuleset()).Convert();
+        }
+
+        private static double[] noteTimes(Beatmap<KeyboardHitObject> beatmap) => beatmap.HitObjects.Select(h => h.StartTime).ToArray();
+
+        // The default beat is 1000 ms, so anything under 450 ms is very short.
+        [TestCase(400, 0, new double[] { 1000 }, TestName = "Very short slider is one press")]
+        [TestCase(500, 0, new double[] { 1000, 1500 }, TestName = "A 1/2 slider is two presses")]
+        [TestCase(2000, 0, new double[] { 1000, 3000 }, TestName = "Long slider is two presses")]
+        [TestCase(1500, 2, new double[] { 1000, 1500, 2000, 2500 }, TestName = "Reverse slider gets a press on every turn")]
+        [TestCase(800, 3, new double[] { 1000, 1800 }, TestName = "Quick turns get no press")]
+        [TestCase(200, 1, new double[] { 1000 }, TestName = "Very short reverse slider is one press")]
+        public void TestSliderPresses(double duration, int repeats, double[] expected)
+        {
+            var result = convert(new FakeSlider { StartTime = 1000, Duration = duration, RepeatCount = repeats });
+
+            Assert.That(noteTimes(result), Is.EqualTo(expected).Within(0.001));
+        }
+
+        [Test]
+        public void TestVeryShortDependsOnTheMapsTempo()
+        {
+            var source = new Beatmap<HitObject>();
+            source.ControlPointInfo.Add(0, new TimingControlPoint { BeatLength = 2000 });
+            source.HitObjects.Add(new FakeSlider { StartTime = 1000, Duration = 800 });
+
+            var result = (Beatmap<KeyboardHitObject>)new KeyboardBeatmapConverter(source, new KeyboardRuleset()).Convert();
+
+            Assert.That(noteTimes(result), Is.EqualTo(new double[] { 1000 }));
+        }
+
+        [Test]
+        public void TestResultsScreenOnlyListsResultsThatExist()
+        {
+            var shown = new KeyboardRuleset().GetHitResultsForDisplay().Select(r => r.result);
+
+            Assert.That(shown, Is.EquivalentTo(new[] { HitResult.Great, HitResult.Ok, HitResult.Meh, HitResult.Miss }));
+        }
+
+        [Test]
+        public void TestCircleSizeIsHidden()
+        {
+            var acronyms = new KeyboardRuleset().GetBeatmapAttributesForDisplay(new BeatmapInfo(), Array.Empty<Mod>()).Select(a => a.Acronym);
+
+            Assert.That(acronyms, Is.EqualTo(new[] { "AR", "OD", "HP" }));
+        }
+
+        [Test]
+        public void TestSongSelectCountsNotesAndSpinners()
+        {
+            var result = convert(
+                new FakeCircle { StartTime = 500 },
+                new FakeSlider { StartTime = 1000, Duration = 2000 },
+                new FakeSpinner { StartTime = 4000, Duration = 1000 });
+
+            var statistics = result.GetStatistics().ToList();
+
+            Assert.That(statistics.Select(s => s.Name), Is.EqualTo(new[] { BeatmapStatisticStrings.Notes, BeatmapStatisticStrings.Spinners }));
+            Assert.That(statistics.Select(s => s.Content), Is.EqualTo(new[] { "3", "1" }));
         }
 
         [Test]
@@ -224,7 +287,7 @@ namespace osu.Game.Rulesets.Keyboard.Tests
         public void TestEveryLanguageTranslatesEveryText()
         {
             var keys = KeyboardStrings.AllKeys.ToList();
-            Assert.That(keys, Has.Count.EqualTo(18));
+            Assert.That(keys, Has.Count.EqualTo(20));
 
             foreach (string language in KeyboardStrings.Languages)
             {
@@ -274,6 +337,19 @@ namespace osu.Game.Rulesets.Keyboard.Tests
             public bool NewCombo { get; set; }
             public int ComboOffset { get; set; }
             public Vector2 Position { get; set; }
+            public float X { get => Position.X; set => Position = new Vector2(value, Y); }
+            public float Y { get => Position.Y; set => Position = new Vector2(X, value); }
+        }
+
+        private class FakeSlider : HitObject, IHasPathWithRepeats, IHasPosition
+        {
+            public double Duration { get; set; }
+            public double EndTime { get => StartTime + Duration; set => Duration = value - StartTime; }
+            public double Distance => 300;
+            public SliderPath Path { get; } = new SliderPath(PathType.LINEAR, new[] { Vector2.Zero, new Vector2(300, 0) });
+            public int RepeatCount { get; set; }
+            public IList<IList<HitSampleInfo>> NodeSamples { get; } = new List<IList<HitSampleInfo>>();
+            public Vector2 Position { get; set; } = new Vector2(100, 100);
             public float X { get => Position.X; set => Position = new Vector2(value, Y); }
             public float Y { get => Position.Y; set => Position = new Vector2(X, value); }
         }

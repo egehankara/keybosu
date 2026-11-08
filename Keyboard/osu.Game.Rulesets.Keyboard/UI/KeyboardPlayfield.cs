@@ -113,7 +113,8 @@ namespace osu.Game.Rulesets.Keyboard.UI
                                 new Container
                                 {
                                     RelativeSizeAxes = Axes.Both,
-                                    ChildrenEnumerable = Layout.Keys.Select(k => new KeyPressHighlight(k, Layout)),
+                                    // The dimmed extra keys never get notes, so pressing them shows nothing either.
+                                    ChildrenEnumerable = Layout.Keys.Where(k => k.Playable).Select(k => new KeyPressHighlight(k, Layout)),
                                 },
                             }
                         }

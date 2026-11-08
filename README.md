@@ -15,6 +15,8 @@ Any existing osu! beatmap can be played: it is converted automatically.
 - **Notes:** each note of the original map goes to the key nearest to where it was on the osu! playfield
   (top of the screen → top letter row, bottom → bottom row). A key never shows two notes at once: the next one
   only appears when the previous one is over.
+- **Sliders** become a press where they start and a press where they end. Very short ones (under about half a beat)
+  are only the first press. Reverse sliders also get a press on every turn, unless the turns come that quickly.
 - **Spinners** (and taiko swells / catch banana showers) become a hold on the Space bar. Hold Space for the whole
   spinner: a circle grows out from the middle as you hold. 90%+ is Great, 60%+ Ok, 30%+ Meh, otherwise Miss.
 - **Timing** is exactly osu!standard's (300 / 100 / 50): ±49.5 / 99.5 / 149.5 ms at OD 5, the same OD curves and
@@ -42,7 +44,7 @@ Under *Settings → Ruleset → keybosu!*, in osu!'s current settings style:
 | **Highlight home row keys** | Gives the eight keys your fingers rest on a lighter colour. The bumps on the index-finger keys are always shown. |
 | **Show judgements** | Turns the Great / Ok / Meh / Miss text under the keys on or off. |
 
-Settings apply the next time a map starts. All texts are translated into the 39 languages osu! supports and follow
+A button at the bottom opens this page, for feedback and bug reports. Settings apply the next time a map starts. All texts are translated into the 39 languages osu! supports and follow
 osu!'s own language setting (`Keyboard/osu.Game.Rulesets.Keyboard/Resources/Localisation/translations.ini`).
 
 ## Install
@@ -57,13 +59,15 @@ osu!'s own language setting (`Keyboard/osu.Game.Rulesets.Keyboard/Resources/Loca
 From source (needs the .NET SDK): `./install.sh` builds the ruleset and copies it to the Linux folder above
 (set `OSU_DATA` for another data folder).
 
-**Compatibility:** built for ruleset API `2026.818.0` and checked against osu!lazer 2026.1005. If an osu!lazer
+**Compatibility:** built for ruleset API `2026.818.0` and checked against osu!lazer 2026.1005 on Linux. If an osu!lazer
 update changes the ruleset API, the ruleset has to be rebuilt.
 
 ## Good to know
 
 - Custom rulesets never award PP.
-- The extra keys (ANSI backslash, ISO key left of Z) are drawn dimmed and never get notes. The ISO key at the end of
+- osu!'s key overlay shows nothing in this ruleset: the keyboard on screen already shows every key.
+- Please keep the default key bindings unless you have to change them. If your keyboard doesn't match, pick it under *Keyboard layout* instead.
+- The extra keys (ANSI backslash, ISO key left of Z) are drawn dimmed, never get notes and don't react when pressed. The ISO key at the end of
   the home row cannot be read by osu!framework at all, so it is only drawn.
 - While osu!lazer offers "skip intro" it takes Space for itself, so a spinner right at the very start of a map only
   counts once the skip button is gone. Pausing during a break or the intro resumes without a countdown (as in osu!mania).
@@ -93,7 +97,7 @@ keybosu! is a fan-made ruleset and is not affiliated with ppy.
 ## Türkçe
 
 **keybosu!**, bütün klavyenin oyun alanı olduğu bir osu!lazer ruleset'i. Tuşların içinde renkli kareler büyür, kare
-tuşu doldurduğu anda o tuşa basarsın. Spinner'larda Space'e basılı tutarsın. Bütün osu! haritaları otomatik olarak
+tuşu doldurduğu anda o tuşa basarsın. Spinner'larda Space'e basılı tutarsın. Slider'lar başta ve sonda birer basış olur, çok kısa olanlar tek basıştır. Bütün osu! haritaları otomatik olarak
 dönüştürülür. Zamanlama osu!standard ile birebir aynıdır, renkler skin'inin ya da haritanın combo renkleridir.
 Ayarlar (klavye düzeni, klavye türü, ekran merkezi, temel sıra vurgusu, isabet dereceleri) osu!'nun desteklediği
 39 dile çevrilidir. Kurulum için yukarıdaki *Install* bölümüne bak. Özel rulesetler PP vermez.

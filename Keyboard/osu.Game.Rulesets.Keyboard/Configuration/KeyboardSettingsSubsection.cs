@@ -3,6 +3,7 @@
 
 using osu.Framework.Allocation;
 using osu.Framework.Graphics;
+using osu.Framework.Platform;
 using osu.Game.Graphics.UserInterfaceV2;
 using osu.Game.Overlays.Settings;
 using osu.Game.Rulesets.Keyboard.Localisation;
@@ -22,7 +23,7 @@ namespace osu.Game.Rulesets.Keyboard.Configuration
         }
 
         [BackgroundDependencyLoader]
-        private void load()
+        private void load(GameHost host)
         {
             var config = (KeyboardRulesetConfigManager)Config;
 
@@ -59,6 +60,11 @@ namespace osu.Game.Rulesets.Keyboard.Configuration
                     HintText = KeyboardStrings.ShowJudgementsTooltip,
                     Current = config.GetBindable<bool>(KeyboardRulesetSetting.ShowJudgements),
                 }),
+                new SettingsButtonV2
+                {
+                    Text = KeyboardStrings.Feedback,
+                    Action = () => host.OpenUrlExternally(KeyboardRuleset.PROJECT_URL),
+                },
             };
         }
     }

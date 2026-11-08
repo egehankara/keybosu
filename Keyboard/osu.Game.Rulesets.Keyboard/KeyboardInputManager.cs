@@ -5,17 +5,27 @@ using System.ComponentModel;
 using osu.Framework.Allocation;
 using osu.Framework.Input.Bindings;
 using osu.Game.Rulesets.UI;
+using osu.Game.Screens.Play.HUD;
+using osu.Game.Screens.Play.HUD.ClicksPerSecond;
 
 namespace osu.Game.Rulesets.Keyboard
 {
     // Cached so spinners can ask whether Space is already held when they appear.
     [Cached]
-    public partial class KeyboardInputManager : RulesetInputManager<KeyboardAction>
+    public partial class KeyboardInputManager : RulesetInputManager<KeyboardAction>, ICanAttachHUDPieces
     {
         public KeyboardInputManager(RulesetInfo ruleset)
             : base(ruleset, 0, SimultaneousBindingMode.Unique)
         {
         }
+
+        // The keyboard on screen already shows every key. osu!'s key overlay would only add almost fifty counters
+        // named "B1", "B2", ... on top of the combo, so it gets nothing to count.
+        void ICanAttachHUDPieces.Attach(InputCountController inputCountController)
+        {
+        }
+
+        void ICanAttachHUDPieces.Attach(ClicksPerSecondController controller) => Attach(controller);
     }
 
     /// <summary>

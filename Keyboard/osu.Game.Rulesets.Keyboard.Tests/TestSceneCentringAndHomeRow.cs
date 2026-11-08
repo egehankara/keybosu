@@ -43,6 +43,21 @@ namespace osu.Game.Rulesets.Keyboard.Tests
             AddUntilStep("keys drawn", () => keys.Any() && keys.All(k => k.IsLoaded && k.DrawWidth > 0));
         }
 
+        [TestCase(KeyboardType.Ansi)]
+        [TestCase(KeyboardType.Iso)]
+        public void TestExtraKeysShowNoPressHighlight(KeyboardType type)
+        {
+            play(KeyboardLayoutType.TurkishQ, type, KeyboardCentring.WholeKeyboard);
+
+            AddAssert("only playable keys light up", () =>
+            {
+                var layout = KeyboardLayout.Create(KeyboardLayoutType.TurkishQ, type);
+
+                return layout.Keys.Any(k => !k.Playable)
+                       && Player.DrawableRuleset.Playfield.ChildrenOfType<KeyPressHighlight>().Count() == layout.Keys.Count(k => k.Playable);
+            });
+        }
+
         private IEnumerable<KeyBackground> keys => Player.DrawableRuleset.Playfield.ChildrenOfType<KeyBackground>();
 
         private float screenCentreX => Player.ScreenSpaceDrawQuad.Centre.X;

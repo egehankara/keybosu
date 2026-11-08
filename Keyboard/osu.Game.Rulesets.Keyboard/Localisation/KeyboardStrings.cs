@@ -36,9 +36,14 @@ namespace osu.Game.Rulesets.Keyboard.Localisation
         /// <summary>Appended to every setting's tooltip.</summary>
         public static LocalisableString AppliesNextMap => get(nameof(AppliesNextMap));
 
+        public static LocalisableString Feedback => get(nameof(Feedback));
+
         // On the playfield
         public static LocalisableString KeySpace => get(nameof(KeySpace));
         public static LocalisableString HoldSpace => get(nameof(HoldSpace));
+
+        // Key bindings panel
+        public static LocalisableString KeyBindingsHint => get(nameof(KeyBindingsHint));
 
         /// <summary>Languages that have a section in the translation file (lower-case culture names, e.g. "tr", "pt-br").</summary>
         public static IEnumerable<string> Languages => translations.Value.Keys;

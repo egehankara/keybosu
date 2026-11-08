@@ -27,6 +27,12 @@ namespace osu.Game.Rulesets.Keyboard.Beatmaps
         private const double min_same_key_gap = 350;
 
         /// <summary>
+        /// A slider, or one pass of a reverse slider, shorter than this many beats counts as very short.
+        /// Just under 1/2, so that real 1/2 sliders are not caught by rounding in their length.
+        /// </summary>
+        private const double short_slider_beats = 0.45;
+
+        /// <summary>
         /// Two notes on the same key closer together than this (in ms) would be on screen at the same time,
         /// one square growing inside the other. Worked out from the map's approach rate on first use.
         /// </summary>
@@ -57,6 +63,8 @@ namespace osu.Game.Rulesets.Keyboard.Beatmaps
 
         public override bool CanConvert() => true;
 
+        protected override Beatmap<KeyboardHitObject> CreateBeatmap() => new KeyboardBeatmap();
+
         protected override IEnumerable<KeyboardHitObject> ConvertHitObject(HitObject original, IBeatmap beatmap, CancellationToken cancellationToken)
         {
             // A note starts filling TimePreempt before it is due (same formula as KeyboardHitObject).
@@ -72,12 +80,25 @@ namespace osu.Game.Rulesets.Keyboard.Beatmaps
             {
                 if (original is IHasPath path)
                 {
-                    // Slider: a note on the head and another one where the slider ends.
+                    // Slider: a note on the head, one on every turn of a reverse slider, and one where it ends.
+                    // Very short sliders are only the head, and turns that come very quickly get no note.
                     int repeats = (original as IHasRepeats)?.RepeatCount ?? 0;
-                    Vector2 endPosition = repeats % 2 == 0 ? startPosition + path.Path.PositionAt(1) : startPosition;
+                    double shortLength = beatmap.ControlPointInfo.TimingPointAt(original.StartTime).BeatLength * short_slider_beats;
+                    double spanDuration = duration.Duration / (repeats + 1);
+                    Vector2 farEnd = startPosition + path.Path.PositionAt(1);
 
-                    yield return withCombo(create(original.StartTime, nodeSamples(original, true), target(startPosition, hasPosition, random)), original);
-                    yield return create(duration.EndTime, nodeSamples(original, false), target(endPosition, hasPosition, random));
+                    yield return withCombo(create(original.StartTime, nodeSamples(original, 0), target(startPosition, hasPosition, random)), original);
+
+                    if (duration.Duration < shortLength)
+                        yield break;
+
+                    if (spanDuration >= shortLength)
+                    {
+                        for (int turn = 1; turn <= repeats; turn++)
+                            yield return create(original.StartTime + spanDuration * turn, nodeSamples(original, turn), target(turn % 2 == 0 ? startPosition : farEnd, hasPosition, random));
+                    }
+
+                    yield return create(duration.EndTime, nodeSamples(original, repeats + 1), target(repeats % 2 == 0 ? farEnd : startPosition, hasPosition, random));
                 }
                 else if (original is IHasColumn)
                 {
@@ -175,10 +196,10 @@ namespace osu.Game.Rulesets.Keyboard.Beatmaps
             return set.GetViewBetween(time - gap, time + gap).Count == 0;
         }
 
-        private static IList<HitSampleInfo> nodeSamples(HitObject original, bool head)
+        private static IList<HitSampleInfo> nodeSamples(HitObject original, int node)
         {
-            if (original is IHasRepeats repeats && repeats.NodeSamples.Count > 0)
-                return head ? repeats.NodeSamples[0] : repeats.NodeSamples[^1];
+            if (original is IHasRepeats repeats && node < repeats.NodeSamples.Count)
+                return repeats.NodeSamples[node];
 
             return original.Samples;
         }

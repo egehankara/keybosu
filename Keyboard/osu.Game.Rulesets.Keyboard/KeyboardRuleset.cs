@@ -12,6 +12,7 @@ using osu.Framework.Input.Bindings;
 using osu.Game.Beatmaps;
 using osu.Game.Configuration;
 using osu.Game.Graphics;
+using osu.Game.Overlays.Settings.Sections.Input;
 using osu.Game.Overlays.Settings;
 using osu.Game.Rulesets.Configuration;
 using osu.Game.Rulesets.Difficulty;
@@ -20,6 +21,7 @@ using osu.Game.Rulesets.Keyboard.Configuration;
 using osu.Game.Rulesets.Keyboard.Mods;
 using osu.Game.Rulesets.Keyboard.UI;
 using osu.Game.Rulesets.Mods;
+using osu.Game.Rulesets.Scoring;
 using osu.Game.Rulesets.UI;
 using osuTK;
 using osuTK.Graphics;
@@ -62,11 +64,23 @@ namespace osu.Game.Rulesets.Keyboard
             }
         }
 
-        public override string ShortName => "keyboard";
+        public override string ShortName => SHORT_NAME;
+
+        public const string SHORT_NAME = "keyboard";
+
+        /// <summary>Where the "feedback" button in the settings leads.</summary>
+        public const string PROJECT_URL = "https://github.com/xrayzack1010/keybosu";
 
         // Each action is bound to its own physical key, taken from the layout (including keys only some keyboards have).
         public override IEnumerable<KeyBinding> GetDefaultKeyBindings(int variant = 0)
             => KeyboardLayout.AllBindableKeys.Select(k => new KeyBinding(k.Key, k.Action));
+
+        // Everything else would show up on the results screen as an always-empty column. Miss is always included by osu!.
+        public override IEnumerable<HitResult> GetValidHitResults() => new[] { HitResult.Great, HitResult.Ok, HitResult.Meh };
+
+        // Keys have a fixed size, so the map's circle size has no effect here.
+        public override IEnumerable<RulesetBeatmapAttribute> GetBeatmapAttributesForDisplay(IBeatmapInfo beatmapInfo, IReadOnlyCollection<Mod> mods)
+            => base.GetBeatmapAttributesForDisplay(beatmapInfo, mods).Where(a => a.Acronym != "CS");
 
         public override IRulesetConfigManager CreateConfig(SettingsStore? settings) => new KeyboardRulesetConfigManager(settings, RulesetInfo);
 
@@ -87,6 +101,22 @@ namespace osu.Game.Rulesets.Keyboard
 
             /// <summary>Size of the key inside, as a share of the icon's size.</summary>
             public const float KEY_SIZE = 0.4f;
+
+            private KeyBindingPanel? panelAwaitingWarning;
+
+            protected override void LoadComplete()
+            {
+                base.LoadComplete();
+                panelAwaitingWarning = KeyBindingsWarning.FindPanelOf(this);
+            }
+
+            protected override void Update()
+            {
+                base.Update();
+
+                if (panelAwaitingWarning != null && KeyBindingsWarning.TryAddTo(panelAwaitingWarning, SHORT_NAME))
+                    panelAwaitingWarning = null;
+            }
 
             public Icon()
             {
