@@ -58,6 +58,11 @@ namespace osu.Game.Rulesets.Keyboard.Objects
         /// <summary>How long before <see cref="HitObject.StartTime"/> the square starts filling, from the map's approach rate.</summary>
         public double TimePreempt { get; set; } = 800;
 
+        /// <summary>Keeps the speed osu!standard would fill this note at, instead of the slower default.</summary>
+        public bool OriginalApproach { get; set; }
+
+        private const double max_eased_approach = 1400;
+
         /// <summary>
         /// After a note on a key, how long that key needs before the next note on it may show up:
         /// covers the late hit window and the hit animation, so the key is completely empty again.
@@ -88,8 +93,19 @@ namespace osu.Game.Rulesets.Keyboard.Objects
         {
             base.ApplyDefaultsToSelf(controlPointInfo, difficulty);
 
-            // Same approach-rate curve as osu!standard, so converted maps keep their intended reading speed.
-            TimePreempt = IBeatmapDifficultyInfo.DifficultyRange(difficulty.ApproachRate, 1800, 1200, 450);
+            TimePreempt = ApproachTime(difficulty.ApproachRate, OriginalApproach);
+        }
+
+        /// <summary>
+        /// How long a note takes to fill, in ms. Finding a key among 33 takes longer than moving a cursor, so quick approach
+        /// times are doubled, up to <see cref="max_eased_approach"/>. Maps that are already slower than that stay as they are.
+        /// </summary>
+        public static double ApproachTime(double approachRate, bool original)
+        {
+            // Same approach-rate curve as osu!standard.
+            double time = IBeatmapDifficultyInfo.DifficultyRange(approachRate, 1800, 1200, 450);
+
+            return original || time >= max_eased_approach ? time : Math.Min(time * 2, max_eased_approach);
         }
     }
 

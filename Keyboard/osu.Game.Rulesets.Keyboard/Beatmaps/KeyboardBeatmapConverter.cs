@@ -15,7 +15,8 @@ using osuTK;
 namespace osu.Game.Rulesets.Keyboard.Beatmaps
 {
     /// <summary>
-    /// Converts any beatmap by mapping each object's playfield position onto the nearest key.
+    /// Converts any beatmap by mapping each object's playfield position onto the nearest key,
+    /// thinning out the fastest notes, filling slower and mostly avoiding the keys at the edges unless <see cref="OriginalDensity"/> is set.
     /// </summary>
     public class KeyboardBeatmapConverter : BeatmapConverter<KeyboardHitObject>
     {
@@ -50,6 +51,32 @@ namespace osu.Game.Rulesets.Keyboard.Beatmaps
         private readonly float areaLeft, areaTop, areaWidth, areaHeight;
         private readonly Dictionary<KeyboardAction, SortedSet<double>> usedTimes = new Dictionary<KeyboardAction, SortedSet<double>>();
 
+        /// <summary>Notes closer together than half a beat are thinned out, as long as that is within these limits (in ms).</summary>
+        private const double min_note_gap = 180;
+
+        private const double max_note_gap = 400;
+
+        /// <summary>Slightly under half a beat, so that real half beats are not caught by rounding in their timing.</summary>
+        private const double note_gap_beats = 0.475;
+
+        /// <summary>The share of notes that may still use <see cref="edgeKeys"/>.</summary>
+        private const double edge_note_chance = 0.25;
+
+        /// <summary>How much more a move to another row counts than a sideways one, when moving away from an edge.</summary>
+        private const float off_row_penalty = 9;
+
+        /// <summary>The hardest keys to reach: the first key of every row and the last two, which are mostly punctuation.</summary>
+        private readonly HashSet<KeyboardAction> edgeKeys;
+
+        /// <summary>Every note of the map; which ones stay and what key they use is decided once all of them are known.</summary>
+        private readonly List<NoteCandidate> candidates = new List<NoteCandidate>();
+
+        private int currentObject;
+        private double currentNoteGap;
+
+        /// <summary>Keeps every note, the map's own approach speed and every key, instead of the easier default.</summary>
+        public bool OriginalDensity { get; set; }
+
         public KeyboardBeatmapConverter(IBeatmap beatmap, Ruleset ruleset)
             : base(beatmap, ruleset)
         {
@@ -59,6 +86,15 @@ namespace osu.Game.Rulesets.Keyboard.Beatmaps
             areaTop = noteKeys.Min(k => k.Y);
             areaWidth = noteKeys.Max(k => k.X + k.Width) - areaLeft;
             areaHeight = noteKeys.Max(k => k.Y + 1) - areaTop;
+
+            edgeKeys = noteKeys.GroupBy(k => k.Y)
+                               .SelectMany(row =>
+                               {
+                                   var keys = row.OrderBy(k => k.X).ToList();
+                                   return keys.Take(1).Concat(keys.TakeLast(2));
+                               })
+                               .Select(k => k.Action)
+                               .ToHashSet();
         }
 
         public override bool CanConvert() => true;
@@ -69,9 +105,12 @@ namespace osu.Game.Rulesets.Keyboard.Beatmaps
         {
             // A note starts filling TimePreempt before it is due (same formula as KeyboardHitObject).
             sameKeyGap ??= Math.Max(min_same_key_gap,
-                IBeatmapDifficultyInfo.DifficultyRange(beatmap.Difficulty.ApproachRate, 1800, 1200, 450) + KeyboardHitObject.SAME_KEY_CLEARANCE);
+                KeyboardHitObject.ApproachTime(beatmap.Difficulty.ApproachRate, OriginalDensity) + KeyboardHitObject.SAME_KEY_CLEARANCE);
 
             var random = new Random((int)original.StartTime);
+
+            currentObject++;
+            currentNoteGap = Math.Clamp(beatmap.ControlPointInfo.TimingPointAt(original.StartTime).BeatLength * note_gap_beats, min_note_gap, max_note_gap);
 
             bool hasPosition = original is IHasPosition;
             Vector2 startPosition = (original as IHasPosition)?.Position ?? Vector2.Zero;
@@ -138,6 +177,16 @@ namespace osu.Game.Rulesets.Keyboard.Beatmaps
         {
             var beatmap = base.ConvertBeatmap(original, cancellationToken);
 
+            var removed = OriginalDensity ? new HashSet<KeyboardHitObject>() : thinOut();
+
+            foreach (var candidate in candidates.Where(c => !removed.Contains(c.Note)))
+                candidate.Note.Key = pickKey(candidate.Target, candidate.Note.StartTime);
+
+            beatmap.HitObjects = beatmap.HitObjects.Where(h => !removed.Contains(h)).ToList();
+
+            foreach (var note in beatmap.HitObjects)
+                note.OriginalApproach |= OriginalDensity;
+
             // Tell every note when the key it uses is free again, so it never appears while the previous note is still there.
             foreach (var notesOnKey in beatmap.HitObjects.GroupBy(h => h.Key))
             {
@@ -153,6 +202,55 @@ namespace osu.Game.Rulesets.Keyboard.Beatmaps
             return beatmap;
         }
 
+        /// <summary>
+        /// Picks the notes that are too close to the one before them. Starts of objects are looked at first, so that the end of a
+        /// slider never costs the next object its note. Without its first note, the rest of a slider goes too.
+        /// </summary>
+        private HashSet<KeyboardHitObject> thinOut()
+        {
+            var removed = new HashSet<KeyboardHitObject>();
+            var removedObjects = new HashSet<int>();
+            var keptTimes = new SortedSet<double>();
+
+            double lastTime = double.NegativeInfinity;
+            bool carriedNewCombo = false;
+            int carriedComboOffset = 0;
+
+            foreach (var first in candidates.Where(c => c.IsFirstOfObject).OrderBy(c => c.Note.StartTime))
+            {
+                if (first.Note.StartTime - lastTime < first.MinGap)
+                {
+                    // Colours change where a combo starts, which must not be lost along with this note.
+                    carriedNewCombo |= first.Note.NewCombo;
+                    carriedComboOffset += first.Note.ComboOffset;
+
+                    removed.Add(first.Note);
+                    removedObjects.Add(first.ObjectIndex);
+                    continue;
+                }
+
+                first.Note.NewCombo |= carriedNewCombo;
+                first.Note.ComboOffset += carriedComboOffset;
+                carriedNewCombo = false;
+                carriedComboOffset = 0;
+
+                lastTime = first.Note.StartTime;
+                keptTimes.Add(lastTime);
+            }
+
+            foreach (var later in candidates.Where(c => !c.IsFirstOfObject).OrderBy(c => c.Note.StartTime))
+            {
+                double time = later.Note.StartTime;
+
+                if (removedObjects.Contains(later.ObjectIndex) || keptTimes.GetViewBetween(time - later.MinGap + 0.001, time + later.MinGap - 0.001).Count > 0)
+                    removed.Add(later.Note);
+                else
+                    keptTimes.Add(time);
+            }
+
+            return removed;
+        }
+
         /// <summary>Converts an osu! position into key units. Objects without a position get a deterministic random one.</summary>
         private Vector2 target(Vector2 position, bool hasPosition, Random random)
         {
@@ -165,20 +263,34 @@ namespace osu.Game.Rulesets.Keyboard.Beatmaps
 
         private KeyboardHitObject create(double time, IList<HitSampleInfo> samples, Vector2 target)
         {
-            return new KeyboardHitObject
+            var note = new KeyboardHitObject
             {
-                Key = pickKey(target, time),
                 StartTime = time,
                 Samples = samples,
             };
+
+            candidates.Add(new NoteCandidate(note, target, currentObject, currentNoteGap, candidates.LastOrDefault()?.ObjectIndex != currentObject));
+            return note;
         }
 
         private KeyboardAction pickKey(Vector2 target, double time)
         {
             var byDistance = noteKeys.OrderBy(k => Vector2.DistanceSquared(k.Centre, target)).ToList();
 
+            // Most notes stay away from the edges. The same note gets the same answer on every play.
+            bool edgesAllowed = OriginalDensity || new Random((int)time).NextDouble() < edge_note_chance;
+
+            // Moving away from an edge stays on the same row as much as possible, so it is a short sideways move.
+            var preferred = edgesAllowed
+                ? byDistance
+                : noteKeys.Where(k => !edgeKeys.Contains(k.Action))
+                          .OrderBy(k => MathF.Pow(k.Centre.X - target.X, 2) + MathF.Pow(k.Centre.Y - target.Y, 2) * off_row_penalty)
+                          .ToList();
+
+            KeyDefinition? firstFree(IEnumerable<KeyDefinition> keys) => keys.Cast<KeyDefinition?>().FirstOrDefault(k => isFree(k!.Value.Action, time));
+
             // Nearest key that has not been used around this time; if every key is busy, just take the nearest.
-            var chosen = byDistance.Cast<KeyDefinition?>().FirstOrDefault(k => isFree(k!.Value.Action, time)) ?? byDistance[0];
+            var chosen = firstFree(preferred) ?? firstFree(byDistance) ?? byDistance[0];
 
             if (!usedTimes.TryGetValue(chosen.Action, out var set))
                 usedTimes[chosen.Action] = set = new SortedSet<double>();
@@ -203,5 +315,7 @@ namespace osu.Game.Rulesets.Keyboard.Beatmaps
 
             return original.Samples;
         }
+
+        private sealed record NoteCandidate(KeyboardHitObject Note, Vector2 Target, int ObjectIndex, double MinGap, bool IsFirstOfObject);
     }
 }

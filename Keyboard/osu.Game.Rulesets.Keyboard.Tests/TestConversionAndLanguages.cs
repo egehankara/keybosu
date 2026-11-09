@@ -12,11 +12,13 @@ using osu.Game.Beatmaps.ControlPoints;
 using osu.Game.Localisation;
 using osu.Game.Rulesets.Keyboard.Beatmaps;
 using osu.Game.Rulesets.Keyboard.Localisation;
+using osu.Game.Rulesets.Keyboard.Mods;
 using osu.Game.Rulesets.Keyboard.Objects;
 using osu.Game.Rulesets.Mods;
 using osu.Game.Rulesets.Objects;
 using osu.Game.Rulesets.Objects.Types;
 using osu.Game.Rulesets.Scoring;
+using osu.Game.Tests.Beatmaps;
 using osuTK;
 
 namespace osu.Game.Rulesets.Keyboard.Tests
@@ -257,7 +259,7 @@ namespace osu.Game.Rulesets.Keyboard.Tests
         [Test]
         public void TestLateNoteStartsPartlyFullAndGrowsAtTheSameSpeed()
         {
-            var note = new KeyboardHitObject { StartTime = 5000, PreviousOnSameKey = 4500 };
+            var note = new KeyboardHitObject { StartTime = 5000, PreviousOnSameKey = 4500, OriginalApproach = true };
             note.ApplyDefaults(new osu.Game.Beatmaps.ControlPoints.ControlPointInfo(), new BeatmapDifficulty { ApproachRate = 5 });
 
             // AR 5 = 1200ms to fill, but the key is only free from 4500 + 200.
@@ -265,7 +267,7 @@ namespace osu.Game.Rulesets.Keyboard.Tests
             Assert.That(note.AppearOffset, Is.EqualTo(300));
             Assert.That(note.InitialFill, Is.EqualTo(0.75f).Within(0.001f), "appears three quarters full, so the growth speed is unchanged");
 
-            var free = new KeyboardHitObject { StartTime = 5000 };
+            var free = new KeyboardHitObject { StartTime = 5000, OriginalApproach = true };
             free.ApplyDefaults(new osu.Game.Beatmaps.ControlPoints.ControlPointInfo(), new BeatmapDifficulty { ApproachRate = 5 });
             Assert.That(free.AppearOffset, Is.EqualTo(1200));
             Assert.That(free.InitialFill, Is.Zero);
@@ -330,6 +332,172 @@ namespace osu.Game.Rulesets.Keyboard.Tests
             Assert.That(KeyboardLayoutType.TurkishQ.GetLocalisableDescription().ToString(), Is.EqualTo("Türkçe Q"));
             Assert.That(KeyboardLayoutType.Korean.GetLocalisableDescription().ToString(), Does.StartWith("한국어"));
             Assert.That(KeyboardType.Iso.GetLocalisableDescription().ToString(), Does.StartWith("ISO"));
+        }
+
+        private static FakeCircle[] circles(int count, double spacing, float x = 256, float y = 192)
+            => Enumerable.Range(0, count).Select(i => new FakeCircle { StartTime = i * spacing, Position = new Vector2(x, y) }).ToArray();
+
+        private static Beatmap<KeyboardHitObject> convertOriginalDensity(params HitObject[] objects)
+        {
+            var source = new Beatmap<HitObject>();
+            source.HitObjects.AddRange(objects);
+            return (Beatmap<KeyboardHitObject>)new KeyboardBeatmapConverter(source, new KeyboardRuleset()) { OriginalDensity = true }.Convert();
+        }
+
+        // The default beat is 1000 ms: half a beat apart stays, anything closer goes.
+        [TestCase(500, 10, TestName = "Notes half a beat apart all stay")]
+        [TestCase(250, 5, TestName = "A quarter beat stream is halved")]
+        public void TestFastNotesAreThinnedOut(double spacing, int expected)
+        {
+            Assert.That(convert(circles(10, spacing).Cast<HitObject>().ToArray()).HitObjects, Has.Count.EqualTo(expected));
+        }
+
+        [Test]
+        public void TestNotesAtTheSameMomentBecomeOne()
+        {
+            var result = convert(new FakeCircle { StartTime = 1000, Position = new Vector2(50, 50) }, new FakeCircle { StartTime = 1000, Position = new Vector2(450, 300) });
+
+            Assert.That(result.HitObjects, Has.Count.EqualTo(1));
+        }
+
+        [Test]
+        public void TestThinningLimitsHoldOnExtremeTempos()
+        {
+            var fast = new Beatmap<HitObject>();
+            fast.ControlPointInfo.Add(0, new TimingControlPoint { BeatLength = 100 });
+            fast.HitObjects.AddRange(circles(10, 100));
+
+            var slow = new Beatmap<HitObject>();
+            slow.ControlPointInfo.Add(0, new TimingControlPoint { BeatLength = 60000 });
+            slow.HitObjects.AddRange(circles(10, 450));
+
+            Assert.That(new KeyboardBeatmapConverter(fast, new KeyboardRuleset()).Convert().HitObjects.Count(), Is.EqualTo(5), "never closer than 180 ms");
+            Assert.That(new KeyboardBeatmapConverter(slow, new KeyboardRuleset()).Convert().HitObjects.Count(), Is.EqualTo(10), "a gimmick tempo does not wipe the map");
+        }
+
+        [Test]
+        public void TestSliderEndNeverCostsTheNextObjectItsNote()
+        {
+            var result = convert(new FakeSlider { StartTime = 1000, Duration = 1500 }, new FakeCircle { StartTime = 2600, Position = new Vector2(50, 50) });
+
+            Assert.That(noteTimes(result), Is.EqualTo(new double[] { 1000, 2600 }));
+        }
+
+        [Test]
+        public void TestSliderWithoutItsFirstNoteGoesEntirely()
+        {
+            var result = convert(new FakeCircle { StartTime = 1000 }, new FakeSlider { StartTime = 1100, Duration = 3000 });
+
+            Assert.That(noteTimes(result), Is.EqualTo(new double[] { 1000 }));
+        }
+
+        [Test]
+        public void TestSpinnersAreNeverThinnedOut()
+        {
+            var result = convert(new FakeCircle { StartTime = 1000 }, new FakeSpinner { StartTime = 1010, Duration = 2000 });
+
+            Assert.That(result.HitObjects.OfType<KeyboardSpinner>().Count(), Is.EqualTo(1));
+        }
+
+        [Test]
+        public void TestNewComboOfARemovedNoteMovesToTheNextOne()
+        {
+            var result = convert(
+                new FakeCircle { StartTime = 1000 },
+                new FakeCircle { StartTime = 1100, NewCombo = true, ComboOffset = 2 },
+                new FakeCircle { StartTime = 2000 });
+
+            Assert.That(result.HitObjects, Has.Count.EqualTo(2));
+            Assert.That(result.HitObjects[1].NewCombo, Is.True);
+            Assert.That(result.HitObjects[1].ComboOffset, Is.EqualTo(2));
+        }
+
+        [TestCase(10, 900, TestName = "AR 10 is doubled")]
+        [TestCase(9, 1200, TestName = "AR 9 is doubled")]
+        [TestCase(8, 1400, TestName = "AR 8 stops at the limit")]
+        [TestCase(5, 1400, TestName = "AR 5 stops at the limit")]
+        [TestCase(3, 1440, TestName = "Already slower than the limit: AR 3 stays")]
+        [TestCase(0, 1800, TestName = "Already slower than the limit: AR 0 stays")]
+        public void TestNotesFillSlowerByDefault(double approachRate, double expected)
+        {
+            Assert.That(KeyboardHitObject.ApproachTime(approachRate, false), Is.EqualTo(expected).Within(0.001));
+        }
+
+        [TestCase(10, 450)]
+        [TestCase(9, 600)]
+        [TestCase(5, 1200)]
+        public void TestOriginalApproachSpeed(double approachRate, double expected)
+        {
+            Assert.That(KeyboardHitObject.ApproachTime(approachRate, true), Is.EqualTo(expected).Within(0.001));
+        }
+
+        [Test]
+        public void TestOriginalDensityAlsoKeepsTheApproachSpeed()
+        {
+            var note = (KeyboardHitObject)convertOriginalDensity(new FakeCircle { StartTime = 1000 }).HitObjects.Single();
+            var eased = (KeyboardHitObject)convert(new FakeCircle { StartTime = 1000 }).HitObjects.Single();
+
+            Assert.That(note.OriginalApproach, Is.True);
+            Assert.That(eased.OriginalApproach, Is.False);
+        }
+
+        [TestCase(0, 192, new[] { KeyboardAction.Q, KeyboardAction.A, KeyboardAction.Z }, TestName = "Few notes on the far left")]
+        [TestCase(512, 192, new[] { KeyboardAction.BracketLeft, KeyboardAction.BracketRight, KeyboardAction.Semicolon, KeyboardAction.Quote, KeyboardAction.Period, KeyboardAction.Slash }, TestName = "Few notes on the far right")]
+        public void TestEdgesGetOccasionalNotes(float x, float y, KeyboardAction[] edge)
+        {
+            // Far enough apart to never be thinned out, and all on one spot at the edge.
+            var result = convert(circles(2000, 3137, x, y).Cast<HitObject>().ToArray());
+            double share = result.HitObjects.Count(h => edge.Contains(h.Key)) / (double)result.HitObjects.Count;
+
+            Assert.That(share, Is.InRange(0.15, 0.35));
+        }
+
+        [Test]
+        public void TestMovingAwayFromAnEdgeStaysOnTheRow()
+        {
+            var layout = KeyboardLayout.Default;
+            var result = convert(circles(500, 3137, 0, 384).Cast<HitObject>().ToArray());
+
+            Assert.That(result.HitObjects.All(h => layout[h.Key].Y == 2), Is.True);
+        }
+
+        [Test]
+        public void TestSameNotesOnEveryConversion()
+        {
+            var objects = circles(300, 750, 20, 30).Cast<HitObject>().ToArray();
+
+            Assert.That(convert(objects).HitObjects.Select(h => h.Key), Is.EqualTo(convert(objects).HitObjects.Select(h => h.Key)));
+        }
+
+        [Test]
+        public void TestOriginalDensityKeepsEveryNoteAndEveryKey()
+        {
+            var result = convertOriginalDensity(circles(300, 100, 0, 192).Cast<HitObject>().ToArray());
+
+            Assert.That(result.HitObjects, Has.Count.EqualTo(300));
+            Assert.That(result.HitObjects.First().Key, Is.EqualTo(KeyboardAction.A));
+        }
+
+        [Test]
+        public void TestOriginalDensityModIsOffered()
+        {
+            Assert.That(new KeyboardRuleset().GetModsFor(ModType.DifficultyIncrease).OfType<KeyboardModOriginalDensity>().Count(), Is.EqualTo(1));
+        }
+
+        [Test]
+        public void TestStarsFollowTheRatingSongSelectSortsBy()
+        {
+            double starsFor(double stored, params Mod[] mods)
+            {
+                var source = new Beatmap { BeatmapInfo = { StarRating = stored, Ruleset = new KeyboardRuleset().RulesetInfo } };
+                source.HitObjects.AddRange(circles(20, 1000));
+                return new KeyboardRuleset().CreateDifficultyCalculator(new TestWorkingBeatmap(source)).Calculate(mods).StarRating;
+            }
+
+            Assert.That(starsFor(4.2), Is.EqualTo(4.2).Within(0.0001));
+            Assert.That(starsFor(6.1), Is.GreaterThan(starsFor(4.2)));
+            Assert.That(starsFor(4.2, new KeyboardModDoubleTime()), Is.GreaterThan(starsFor(4.2)));
+            Assert.That(starsFor(-1), Is.GreaterThan(0), "not worked out by osu! yet");
         }
 
         private class FakeCircle : HitObject, IHasPosition, IHasCombo

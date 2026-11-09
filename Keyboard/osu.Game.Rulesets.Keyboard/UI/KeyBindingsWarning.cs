@@ -92,5 +92,21 @@ namespace osu.Game.Rulesets.Keyboard.UI
             list.Insert(-1, new KeyBindingsWarning());
             return true;
         }
+
+        /// <summary>
+        /// osu! gives every ruleset a heading and a reset button in the panel's editor section, even with no bindings to list.
+        /// Removes this ruleset's. Returns false while the section is not ready yet, so the caller can try again.
+        /// </summary>
+        public static bool TryRemoveEditorHeading(KeyBindingPanel panel, string rulesetShortName)
+        {
+            var heading = panel.ChildrenOfType<RulesetEditorBindingsSubsection>()
+                               .FirstOrDefault(s => s.Ruleset.ShortName == rulesetShortName);
+
+            if (heading?.Parent is not FlowContainer<Drawable> list || !list.IsLoaded)
+                return false;
+
+            list.Remove(heading, true);
+            return true;
+        }
     }
 }

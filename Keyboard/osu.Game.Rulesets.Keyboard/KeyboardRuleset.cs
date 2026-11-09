@@ -54,7 +54,7 @@ namespace osu.Game.Rulesets.Keyboard
                     return new Mod[] { new KeyboardModNoFail(), new KeyboardModHalfTime() };
 
                 case ModType.DifficultyIncrease:
-                    return new Mod[] { new KeyboardModDoubleTime() };
+                    return new Mod[] { new KeyboardModDoubleTime(), new KeyboardModOriginalDensity() };
 
                 case ModType.Automation:
                     return new Mod[] { new KeyboardModAutoplay() };
@@ -69,11 +69,14 @@ namespace osu.Game.Rulesets.Keyboard
         public const string SHORT_NAME = "keyboard";
 
         /// <summary>Where the "feedback" button in the settings leads.</summary>
-        public const string PROJECT_URL = "https://github.com/xrayzack1010/keybosu";
+        public const string PROJECT_URL = "https://github.com/egehankara/keybosu";
 
         // Each action is bound to its own physical key, taken from the layout (including keys only some keyboards have).
+        // osu! also asks for the editor's bindings; this ruleset has no editor, so there are none.
         public override IEnumerable<KeyBinding> GetDefaultKeyBindings(int variant = 0)
-            => KeyboardLayout.AllBindableKeys.Select(k => new KeyBinding(k.Key, k.Action));
+            => variant == EDITOR_VARIANT
+                ? Array.Empty<KeyBinding>()
+                : KeyboardLayout.AllBindableKeys.Select(k => new KeyBinding(k.Key, k.Action));
 
         // Everything else would show up on the results screen as an always-empty column. Miss is always included by osu!.
         public override IEnumerable<HitResult> GetValidHitResults() => new[] { HitResult.Great, HitResult.Ok, HitResult.Meh };
@@ -103,11 +106,12 @@ namespace osu.Game.Rulesets.Keyboard
             public const float KEY_SIZE = 0.4f;
 
             private KeyBindingPanel? panelAwaitingWarning;
+            private KeyBindingPanel? panelAwaitingEditorCleanup;
 
             protected override void LoadComplete()
             {
                 base.LoadComplete();
-                panelAwaitingWarning = KeyBindingsWarning.FindPanelOf(this);
+                panelAwaitingWarning = panelAwaitingEditorCleanup = KeyBindingsWarning.FindPanelOf(this);
             }
 
             protected override void Update()
@@ -116,6 +120,9 @@ namespace osu.Game.Rulesets.Keyboard
 
                 if (panelAwaitingWarning != null && KeyBindingsWarning.TryAddTo(panelAwaitingWarning, SHORT_NAME))
                     panelAwaitingWarning = null;
+
+                if (panelAwaitingEditorCleanup != null && KeyBindingsWarning.TryRemoveEditorHeading(panelAwaitingEditorCleanup, SHORT_NAME))
+                    panelAwaitingEditorCleanup = null;
             }
 
             public Icon()

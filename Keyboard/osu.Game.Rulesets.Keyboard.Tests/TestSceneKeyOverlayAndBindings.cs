@@ -7,6 +7,7 @@ using osu.Framework.Graphics;
 using osu.Framework.Graphics.Containers;
 using osu.Framework.Testing;
 using osu.Game.Beatmaps;
+using osu.Game.Graphics.Containers;
 using osu.Game.Overlays;
 using osu.Game.Overlays.Settings.Sections.Input;
 using osu.Game.Rulesets.Keyboard.UI;
@@ -60,6 +61,32 @@ namespace osu.Game.Rulesets.Keyboard.Tests
             // osu! only stores the defaults of the listed variants: emptying this to hide the list would leave new installs without keys.
             Assert.That(ruleset.GameplayVariants, Does.Contain(0));
             Assert.That(ruleset.GetDefaultKeyBindings(0), Is.Not.Empty);
+        }
+
+        [Test]
+        public void TestNoEditorBindings()
+        {
+            KeyBindingPanel panel = null!;
+
+            AddAssert("no editor bindings", () => !new KeyboardRuleset().GetDefaultKeyBindings(KeyboardRuleset.EDITOR_VARIANT).Any());
+            AddStep("show key bindings", () => Child = panel = new KeyBindingPanel { State = { Value = Visibility.Visible } });
+            AddUntilStep("no heading in the editor section", () =>
+            {
+                // Scrolling to the last section, as a player would. Sections keep arriving, so this repeats.
+                foreach (var scroll in panel.ChildrenOfType<OsuScrollContainer>())
+                    scroll.ScrollToEnd(false);
+
+                // Four non-ruleset sections, the editor's being the last of them to be added.
+                return panel.ChildrenOfType<GlobalKeyBindingsSection>().Count() == 4
+                       && panel.ChildrenOfType<RulesetEditorBindingsSubsection>().All(s => s.Ruleset.ShortName != KeyboardRuleset.SHORT_NAME);
+            });
+        }
+
+        [Test]
+        public void TestDllCanBeFoundByOsu()
+        {
+            // osu! only loads files called osu.Game.Rulesets.*.dll from its rulesets folder.
+            Assert.That(typeof(KeyboardRuleset).Assembly.GetName().Name, Is.EqualTo("osu.Game.Rulesets.Keybosu"));
         }
     }
 }

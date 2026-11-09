@@ -36,7 +36,7 @@ namespace osu.Game.Rulesets.Keyboard.Tests
         protected override IBeatmap CreateBeatmap(RulesetInfo ruleset) => new Beatmap<KeyboardHitObject>
         {
             BeatmapInfo = new BeatmapInfo { Ruleset = ruleset, Difficulty = new BeatmapDifficulty() },
-            HitObjects = { new KeyboardSpinner { StartTime = start, Duration = duration } },
+            HitObjects = { new KeyboardSpinner { OriginalApproach = true, StartTime = start, Duration = duration } },
         };
 
         private void startPlay()

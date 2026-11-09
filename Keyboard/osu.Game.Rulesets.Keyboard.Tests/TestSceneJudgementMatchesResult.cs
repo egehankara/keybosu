@@ -62,10 +62,10 @@ namespace osu.Game.Rulesets.Keyboard.Tests
             play();
 
             AddUntilStep("notes created", () => Player.DrawableRuleset.Playfield.AllHitObjects.OfType<DrawableKeyboardHitObject>().Any());
-            AddStep("AR 5: the first note appears 1200ms early", () =>
+            AddStep("AR 5: the first note appears 1400ms early", () =>
             {
                 var note = Player.DrawableRuleset.Playfield.AllHitObjects.OfType<DrawableKeyboardHitObject>().First(n => n.HitObject.StartTime == 3000);
-                Assert.That(note.HitObject.StartTime - note.LifetimeStart, Is.EqualTo(1200).Within(1));
+                Assert.That(note.HitObject.StartTime - note.LifetimeStart, Is.EqualTo(1400).Within(1));
             });
         }
     }
