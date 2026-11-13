@@ -128,6 +128,10 @@ namespace osu.Game.Rulesets.Keyboard.Objects.Drawables
             if (Judged)
                 return;
 
+            // Rewound to before the spinner (seeking back in autoplay or a replay): start counting again from nothing.
+            if (Time.Current < HitObject.StartTime)
+                HeldTime = 0;
+
             // Read the held state directly, so holding Space before the spinner appears still counts.
             bool holding = inputManager.KeyBindingContainer.PressedActions.Contains(KeyboardAction.Space);
 

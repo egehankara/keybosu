@@ -7,8 +7,10 @@ using System.Linq;
 using System.Threading;
 using osu.Game.Audio;
 using osu.Game.Beatmaps;
+using osu.Game.Beatmaps.Legacy;
 using osu.Game.Rulesets.Keyboard.Objects;
 using osu.Game.Rulesets.Objects;
+using osu.Game.Rulesets.Objects.Legacy;
 using osu.Game.Rulesets.Objects.Types;
 using osuTK;
 
@@ -107,8 +109,6 @@ namespace osu.Game.Rulesets.Keyboard.Beatmaps
             sameKeyGap ??= Math.Max(min_same_key_gap,
                 KeyboardHitObject.ApproachTime(beatmap.Difficulty.ApproachRate, OriginalDensity) + KeyboardHitObject.SAME_KEY_CLEARANCE);
 
-            var random = new Random((int)original.StartTime);
-
             currentObject++;
             currentNoteGap = Math.Clamp(beatmap.ControlPointInfo.TimingPointAt(original.StartTime).BeatLength * note_gap_beats, min_note_gap, max_note_gap);
 
@@ -126,7 +126,7 @@ namespace osu.Game.Rulesets.Keyboard.Beatmaps
                     double spanDuration = duration.Duration / (repeats + 1);
                     Vector2 farEnd = startPosition + path.Path.PositionAt(1);
 
-                    yield return withCombo(create(original.StartTime, nodeSamples(original, 0), target(startPosition, hasPosition, random)), original);
+                    yield return withCombo(create(original.StartTime, nodeSamples(original, 0), target(startPosition, hasPosition, original.StartTime)), original);
 
                     if (duration.Duration < shortLength)
                         yield break;
@@ -134,15 +134,15 @@ namespace osu.Game.Rulesets.Keyboard.Beatmaps
                     if (spanDuration >= shortLength)
                     {
                         for (int turn = 1; turn <= repeats; turn++)
-                            yield return create(original.StartTime + spanDuration * turn, nodeSamples(original, turn), target(turn % 2 == 0 ? startPosition : farEnd, hasPosition, random));
+                            yield return create(original.StartTime + spanDuration * turn, nodeSamples(original, turn), target(turn % 2 == 0 ? startPosition : farEnd, hasPosition, original.StartTime + spanDuration * turn));
                     }
 
-                    yield return create(duration.EndTime, nodeSamples(original, repeats + 1), target(repeats % 2 == 0 ? farEnd : startPosition, hasPosition, random));
+                    yield return create(duration.EndTime, nodeSamples(original, repeats + 1), target(repeats % 2 == 0 ? farEnd : startPosition, hasPosition, duration.EndTime));
                 }
-                else if (original is IHasColumn)
+                else if (isManiaHold(original))
                 {
                     // osu!mania hold notes are long but not spinners: just a note where they start.
-                    yield return withCombo(create(original.StartTime, original.Samples, target(startPosition, hasPosition, random)), original);
+                    yield return withCombo(create(original.StartTime, original.Samples, target(startPosition, hasPosition, original.StartTime)), original);
                 }
                 else
                 {
@@ -158,8 +158,16 @@ namespace osu.Game.Rulesets.Keyboard.Beatmaps
                 yield break;
             }
 
-            yield return withCombo(create(original.StartTime, original.Samples, target(startPosition, hasPosition, random)), original);
+            yield return withCombo(create(original.StartTime, original.Samples, target(startPosition, hasPosition, original.StartTime)), original);
         }
+
+        /// <summary>
+        /// Whether a long object is an osu!mania hold note. Maps read from a .osu file are not mania objects yet: their holds
+        /// only say so in the object type from the file.
+        /// </summary>
+        private static bool isManiaHold(HitObject original)
+            => original is IHasColumn
+               || (original is IHasLegacyHitObjectType legacy && (legacy.LegacyType & LegacyHitObjectType.Hold) != 0);
 
         /// <summary>Copies where combos start (and the mapper's colour offset), so combo colours change like in the original map.</summary>
         private static KeyboardHitObject withCombo(KeyboardHitObject note, HitObject original)
@@ -252,11 +260,11 @@ namespace osu.Game.Rulesets.Keyboard.Beatmaps
         }
 
         /// <summary>Converts an osu! position into key units. Objects without a position get a deterministic random one.</summary>
-        private Vector2 target(Vector2 position, bool hasPosition, Random random)
+        private Vector2 target(Vector2 position, bool hasPosition, double time)
         {
             Vector2 fraction = hasPosition
                 ? new Vector2(position.X / osu_width, position.Y / osu_height)
-                : new Vector2(random.NextSingle(), random.NextSingle());
+                : new Vector2((float)RandomFor(time, 1), (float)RandomFor(time, 2));
 
             return new Vector2(areaLeft + fraction.X * areaWidth, areaTop + fraction.Y * areaHeight);
         }
@@ -278,7 +286,7 @@ namespace osu.Game.Rulesets.Keyboard.Beatmaps
             var byDistance = noteKeys.OrderBy(k => Vector2.DistanceSquared(k.Centre, target)).ToList();
 
             // Most notes stay away from the edges. The same note gets the same answer on every play.
-            bool edgesAllowed = OriginalDensity || new Random((int)time).NextDouble() < edge_note_chance;
+            bool edgesAllowed = OriginalDensity || RandomFor(time, 0) < edge_note_chance;
 
             // Moving away from an edge stays on the same row as much as possible, so it is a short sideways move.
             var preferred = edgesAllowed
@@ -306,6 +314,22 @@ namespace osu.Game.Rulesets.Keyboard.Beatmaps
 
             double gap = sameKeyGap ?? min_same_key_gap;
             return set.GetViewBetween(time - gap, time + gap).Count == 0;
+        }
+
+        /// <summary>
+        /// A number from 0 to 1 that looks random but is always the same for the same time (and <paramref name="stream"/>),
+        /// so a map converts the same way every time. new Random(time) is not used: for times close together its first
+        /// numbers are close together too, which turned "random" choices into a repeating pattern.
+        /// </summary>
+        public static double RandomFor(double time, int stream)
+        {
+            // SplitMix64 over the time's bits: nearby inputs give unrelated outputs.
+            ulong x = (ulong)BitConverter.DoubleToInt64Bits(time) + (ulong)stream * 0x9E3779B97F4A7C15UL + 0x9E3779B97F4A7C15UL;
+            x = (x ^ (x >> 30)) * 0xBF58476D1CE4E5B9UL;
+            x = (x ^ (x >> 27)) * 0x94D049BB133111EBUL;
+            x ^= x >> 31;
+
+            return (x >> 11) * (1.0 / (1UL << 53));
         }
 
         private static IList<HitSampleInfo> nodeSamples(HitObject original, int node)

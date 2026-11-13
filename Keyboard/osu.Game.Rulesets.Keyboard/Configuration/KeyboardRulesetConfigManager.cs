@@ -36,7 +36,6 @@ namespace osu.Game.Rulesets.Keyboard.Configuration
     /// <summary>Persistent, per-user settings for the keyboard ruleset.</summary>
     public class KeyboardRulesetConfigManager : RulesetConfigManager<KeyboardRulesetSetting>
     {
-
         public KeyboardRulesetConfigManager(SettingsStore? store, RulesetInfo ruleset, int? variant = null)
             : base(store!, ruleset, variant)
         {
@@ -51,7 +50,6 @@ namespace osu.Game.Rulesets.Keyboard.Configuration
             SetDefault(KeyboardRulesetSetting.HighlightHomeRow, true);
             SetDefault(KeyboardRulesetSetting.Centring, KeyboardCentring.WholeKeyboard);
             SetDefault(KeyboardRulesetSetting.ShowJudgements, true);
-
         }
     }
 }

@@ -34,7 +34,6 @@ namespace osu.Game.Rulesets.Keyboard.UI
 
         public override DrawableHitObject<KeyboardHitObject> CreateDrawableRepresentation(KeyboardHitObject h)
         {
-
             if (h is KeyboardSpinner spinner)
                 return new DrawableKeyboardSpinner(spinner);
 

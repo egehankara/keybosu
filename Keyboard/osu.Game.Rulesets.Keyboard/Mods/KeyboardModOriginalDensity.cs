@@ -17,8 +17,6 @@ namespace osu.Game.Rulesets.Keyboard.Mods
 
         public override LocalisableString Description => KeyboardStrings.ModOriginalDensityDescription;
 
-        public override double ScoreMultiplier => 1;
-
         public override ModType Type => ModType.DifficultyIncrease;
 
         public void ApplyToBeatmapConverter(IBeatmapConverter beatmapConverter)

@@ -22,6 +22,7 @@ Any existing osu! beatmap can be played: it is converted automatically.
   beats) are only the first press. Reverse sliders also get a press on every turn, unless the turns come that quickly.
 - **Spinners** (and taiko swells / catch banana showers) become a hold on the Space bar. Hold Space for the whole
   spinner: a circle grows out from the middle as you hold. 90%+ is Great, 60%+ Ok, 30%+ Meh, otherwise Miss.
+- **osu!mania hold notes** become a single press where they start.
 - **Timing** is exactly osu!standard's (300 / 100 / 50): ±49.5 / 99.5 / 149.5 ms at OD 5, the same OD curves and
   rounding, and pressing up to 400 ms early is a Miss.
 - **Approach:** squares follow the map's approach rate (AR), but quick ones take twice as long, up to 1400 ms. Finding a key
@@ -114,4 +115,6 @@ keybosu! is a fan-made ruleset and is not affiliated with ppy.
 tuşu doldurduğu anda o tuşa basarsın. Spinner'larda Space'e basılı tutarsın. Slider'lar başta ve sonda birer basış olur, kısa olanlar tek basıştır. Haritalar varsayılan olarak seyreltilir ve en kenar tuşlara daha az nota gelir, her notayı istersen Original Density modunu aç. Bütün osu! haritaları otomatik olarak
 dönüştürülür. Zamanlama osu!standard ile birebir aynıdır, renkler skin'inin ya da haritanın combo renkleridir.
 Ayarlar (klavye düzeni, klavye türü, ekran merkezi, temel sıra vurgusu, isabet dereceleri) osu!'nun desteklediği
-39 dile çevrilidir. Kurulum için yukarıdaki *Install* bölümüne bak. Özel rulesetler PP vermez.
+39 dile çevrilidir. Çeviriler ilk olarak yapay zekâ yardımıyla yapıldı; garip ya da yanlış bir şey görürsen
+[Crowdin](https://crowdin.com/project/keybosu) üzerinden düzeltebilirsin, kodlama ya da GitHub hesabı gerekmez.
+Kurulum için yukarıdaki *Install* bölümüne bak. Özel rulesetler PP vermez.

@@ -176,6 +176,51 @@ namespace osu.Game.Rulesets.Keyboard.Tests
             Assert.That(result.HitObjects.Single(), Is.Not.InstanceOf<KeyboardSpinner>());
         }
 
+        /// <summary>A map as osu! reads it from a .osu file (all rulesets' objects come in this generic form).</summary>
+        private static Beatmap<KeyboardHitObject> convertOsuFile(int mode, params string[] hitObjects)
+        {
+            string text = "osu file format v14\n\n[General]\nMode: " + mode + "\n\n[Difficulty]\nApproachRate:9\nOverallDifficulty:8\n\n"
+                          + "[TimingPoints]\n0,500,4,2,0,100,1,0\n\n[HitObjects]\n" + string.Join("\n", hitObjects) + "\n";
+
+            using var stream = new System.IO.MemoryStream(System.Text.Encoding.UTF8.GetBytes(text));
+            using var reader = new osu.Game.IO.LineBufferedReader(stream);
+            var decoded = new osu.Game.Beatmaps.Formats.LegacyBeatmapDecoder().Decode(reader);
+
+            return (Beatmap<KeyboardHitObject>)new KeyboardBeatmapConverter(decoded, new KeyboardRuleset()).Convert();
+        }
+
+        [Test]
+        public void TestManiaHoldFromAFileIsANote()
+        {
+            // An osu!mania hold note (type 128) on column 1 of 4, held from 1000 to 3000 ms.
+            var result = convertOsuFile(3, "64,192,1000,128,0,3000:0:0:0:0:");
+
+            Assert.That(result.HitObjects.Single(), Is.Not.InstanceOf<KeyboardSpinner>());
+            Assert.That(result.HitObjects.Single().StartTime, Is.EqualTo(1000));
+        }
+
+        [Test]
+        public void TestSpinnerFromAFileIsASpinner()
+        {
+            var result = convertOsuFile(0, "256,192,1000,12,0,3000,0:0:0:0:");
+
+            Assert.That(result.HitObjects.Single(), Is.InstanceOf<KeyboardSpinner>());
+        }
+
+        [Test]
+        public void TestRandomChoicesDoNotRepeatInAPattern()
+        {
+            // A stream with a note every 150 ms: a quarter of the notes may use edge keys, scattered like coin flips.
+            bool[] edges = Enumerable.Range(0, 400).Select(i => KeyboardBeatmapConverter.RandomFor(10000 + i * 150, 0) < 0.25).ToArray();
+            int changes = edges.Zip(edges.Skip(1), (a, b) => a != b).Count(c => c);
+
+            Assert.That(edges.Count(e => e) / 400.0, Is.InRange(0.18, 0.32));
+            // Independent flips change about 150 times; new Random(time) gave a fixed 8-note pattern instead.
+            Assert.That(changes, Is.InRange(115, 185));
+            // Some 8-note window differs from the one before it.
+            Assert.That(Enumerable.Range(8, 392).Any(i => edges[i] != edges[i - 8]), Is.True);
+        }
+
         [Test]
         public void TestNormalNotesNeverLandOnSpace()
         {
