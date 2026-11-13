@@ -4,6 +4,7 @@
 using osu.Framework.Localisation;
 using osu.Game.Beatmaps;
 using osu.Game.Rulesets.Keyboard.Beatmaps;
+using osu.Game.Rulesets.Keyboard.Localisation;
 using osu.Game.Rulesets.Mods;
 
 namespace osu.Game.Rulesets.Keyboard.Mods
@@ -14,7 +15,7 @@ namespace osu.Game.Rulesets.Keyboard.Mods
 
         public override string Acronym => "OG";
 
-        public override LocalisableString Description => "Every note of the map, on every key, at its own approach rate.";
+        public override LocalisableString Description => KeyboardStrings.ModOriginalDensityDescription;
 
         public override double ScoreMultiplier => 1;
 

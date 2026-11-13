@@ -300,12 +300,18 @@ namespace osu.Game.Rulesets.Keyboard.Tests
         public void TestEveryLanguageTranslatesEveryText()
         {
             var keys = KeyboardStrings.AllKeys.ToList();
-            Assert.That(keys, Has.Count.EqualTo(20));
+            Assert.That(keys, Has.Count.EqualTo(21));
 
             foreach (string language in KeyboardStrings.Languages)
             {
                 foreach (string key in keys)
-                    Assert.That(KeyboardStrings.RawTranslation(language, key), Is.Not.Null.And.Not.Empty, $"[{language}] is missing {key}");
+                {
+                    var text = KeyboardStrings.RawTranslation(language, key);
+                    Assert.That(text, Is.Not.Null.And.Not.Empty, $"[{language}] is missing {key}");
+
+                    // Crowdin's INI parser cuts a value at ; or # (it reads the rest as a comment).
+                    Assert.That(text, Does.Not.Contain(";").And.Not.Contain("#"), $"[{language}] {key} contains ; or #");
+                }
             }
         }
 

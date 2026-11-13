@@ -42,6 +42,9 @@ namespace osu.Game.Rulesets.Keyboard.Localisation
         public static LocalisableString KeySpace => get(nameof(KeySpace));
         public static LocalisableString HoldSpace => get(nameof(HoldSpace));
 
+        // Mods
+        public static LocalisableString ModOriginalDensityDescription => get(nameof(ModOriginalDensityDescription));
+
         // Key bindings panel
         public static LocalisableString KeyBindingsHint => get(nameof(KeyBindingsHint));
 
