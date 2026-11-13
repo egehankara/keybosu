@@ -49,7 +49,16 @@ Under *Settings → Ruleset → keybosu!*, in osu!'s current settings style:
 | **Show judgements** | Turns the Great / Ok / Meh / Miss text under the keys on or off. |
 
 A button at the bottom opens this page, for feedback and bug reports. Settings apply the next time a map starts. All texts are translated into the 39 languages osu! supports and follow
-osu!'s own language setting (`Keyboard/osu.Game.Rulesets.Keyboard/Resources/Localisation/translations.ini`).
+osu!'s own language setting.
+
+## Translations
+
+The translations were first made with AI help, so some may read oddly. If you speak one of these languages, you can
+fix them on [Crowdin](https://crowdin.com/project/keybosu): no coding or GitHub account needed. Approved changes come back here automatically
+and ship with the next release.
+
+The English source is `Keyboard/osu.Game.Rulesets.Keyboard/Resources/Localisation/en.ini`; the other files in that
+folder come from Crowdin, so please don't edit them in a pull request.
 
 ## Install
 

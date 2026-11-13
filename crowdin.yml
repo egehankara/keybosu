@@ -1,0 +1,11 @@
+# Crowdin sync for keybosu! translations. en.ini is the source; Crowdin writes the other <language>.ini files back.
+# File names follow osu!lazer's culture names (lower case), so a few Crowdin codes are mapped below.
+# Add a language on Crowdin only if osu!lazer supports it, and add it here if its file name would differ.
+files:
+  - source: /Keyboard/osu.Game.Rulesets.Keyboard/Resources/Localisation/en.ini
+    translation: /Keyboard/osu.Game.Rulesets.Keyboard/Resources/Localisation/%two_letters_code%.ini
+    languages_mapping:
+      two_letters_code:
+        es-419: es-419
+        pt-BR: pt-br
+        zh-TW: zh-hant

@@ -286,6 +286,17 @@ namespace osu.Game.Rulesets.Keyboard.Tests
         }
 
         [Test]
+        public void TestTranslationFileFormat()
+        {
+            // The forms Crowdin may export: BOM, ; comments, quoted values, empty (untranslated) values.
+            var texts = KeyboardStrings.Parse("\uFEFF; comment\n# comment\nA = plain\nB = \"quoted \\\"x\\\"\"\nC =\n");
+
+            Assert.That(texts["A"], Is.EqualTo("plain"));
+            Assert.That(texts["B"], Is.EqualTo("quoted \"x\""));
+            Assert.That(texts.ContainsKey("C"), Is.False, "an empty value must fall back to English");
+        }
+
+        [Test]
         public void TestEveryLanguageTranslatesEveryText()
         {
             var keys = KeyboardStrings.AllKeys.ToList();

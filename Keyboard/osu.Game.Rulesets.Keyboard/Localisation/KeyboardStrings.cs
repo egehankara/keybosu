@@ -11,8 +11,8 @@ namespace osu.Game.Rulesets.Keyboard.Localisation
 {
     /// <summary>
     /// Every piece of text the ruleset shows. The language follows osu!lazer's own language setting and updates live.
-    /// Translations live in <c>Resources/Localisation/translations.ini</c> (one [section] per language, <c>key = text</c>);
-    /// anything missing falls back to English.
+    /// Translations live in <c>Resources/Localisation/&lt;language&gt;.ini</c> (one file per language, <c>key = text</c>);
+    /// <c>en.ini</c> is the source, the others are synced with Crowdin. Anything missing falls back to English.
     /// </summary>
     public static class KeyboardStrings
     {
@@ -45,13 +45,13 @@ namespace osu.Game.Rulesets.Keyboard.Localisation
         // Key bindings panel
         public static LocalisableString KeyBindingsHint => get(nameof(KeyBindingsHint));
 
-        /// <summary>Languages that have a section in the translation file (lower-case culture names, e.g. "tr", "pt-br").</summary>
+        /// <summary>Languages that have a translation file (lower-case culture names, e.g. "tr", "pt-br").</summary>
         public static IEnumerable<string> Languages => translations.Value.Keys;
 
         /// <summary>Every key English defines; every other language is expected to define the same ones.</summary>
         public static IEnumerable<string> AllKeys => translations.Value[english].Keys;
 
-        /// <summary>The raw translation of a key in one language section, or null. For tests.</summary>
+        /// <summary>The raw translation of a key in one language, or null. For tests.</summary>
         public static string? RawTranslation(string language, string key)
             => translations.Value.TryGetValue(language, out var texts) && texts.TryGetValue(key, out string? text) ? text : null;
 
@@ -69,12 +69,12 @@ namespace osu.Game.Rulesets.Keyboard.Localisation
             return translations.Value[english].TryGetValue(key, out string? fallback) ? fallback : key;
         }
 
-        /// <summary>Which section of the translation file serves a culture name, or null if none does (English is then used).</summary>
+        /// <summary>Which translation file serves a culture name, or null if none does (English is then used).</summary>
         public static string? SectionFor(string? language) => sectionFor(language);
 
         private const string english = "en";
 
-        // Culture names lazer may report that are spelled differently in the file.
+        // Culture names lazer may report that are spelled differently in the file names.
         private static readonly Dictionary<string, string> aliases = new Dictionary<string, string>
         {
             ["nb"] = "no",
@@ -110,42 +110,62 @@ namespace osu.Game.Rulesets.Keyboard.Localisation
 
         private static readonly Lazy<Dictionary<string, Dictionary<string, string>>> translations = new Lazy<Dictionary<string, Dictionary<string, string>>>(load);
 
+        private const string resource_folder = ".Resources.Localisation.";
+
         private static Dictionary<string, Dictionary<string, string>> load()
         {
             var assembly = typeof(KeyboardStrings).Assembly;
-            string resource = assembly.GetManifestResourceNames().Single(n => n.EndsWith("translations.ini", StringComparison.Ordinal));
+            var result = new Dictionary<string, Dictionary<string, string>>();
 
-            using var stream = assembly.GetManifestResourceStream(resource)!;
-            using var reader = new StreamReader(stream);
+            foreach (string resource in assembly.GetManifestResourceNames())
+            {
+                int folder = resource.IndexOf(resource_folder, StringComparison.Ordinal);
 
-            return Parse(reader.ReadToEnd());
+                if (folder < 0 || !resource.EndsWith(".ini", StringComparison.Ordinal))
+                    continue;
+
+                // "osu.Game.Rulesets.Keyboard.Resources.Localisation.pt-br.ini" -> "pt-br"
+                string language = resource[(folder + resource_folder.Length)..^".ini".Length].ToLowerInvariant().Replace('_', '-');
+
+                using var stream = assembly.GetManifestResourceStream(resource)!;
+                using var reader = new StreamReader(stream);
+
+                result[language] = Parse(reader.ReadToEnd(), $"{language}.ini");
+            }
+
+            if (!result.ContainsKey(english))
+                throw new InvalidOperationException("Resources/Localisation/en.ini is missing.");
+
+            return result;
         }
 
-        /// <summary>Reads the translation file format: <c>[language]</c> sections of <c>key = text</c> lines; <c>#</c> starts a comment.</summary>
-        public static Dictionary<string, Dictionary<string, string>> Parse(string text)
+        /// <summary>
+        /// Reads one translation file: <c>key = text</c> lines; <c>#</c> or <c>;</c> starts a comment.
+        /// Values may be wrapped in double quotes (Crowdin can export them that way).
+        /// </summary>
+        public static Dictionary<string, string> Parse(string text, string fileName = "a translation file")
         {
-            var result = new Dictionary<string, Dictionary<string, string>>();
-            Dictionary<string, string>? current = null;
+            var result = new Dictionary<string, string>();
 
-            foreach (string rawLine in text.Split('\n'))
+            foreach (string rawLine in text.TrimStart('\uFEFF').Split('\n'))
             {
                 string line = rawLine.Trim();
 
-                if (line.Length == 0 || line.StartsWith('#'))
+                if (line.Length == 0 || line.StartsWith('#') || line.StartsWith(';'))
                     continue;
-
-                if (line.StartsWith('[') && line.EndsWith(']'))
-                {
-                    current = result[line[1..^1].Trim().ToLowerInvariant()] = new Dictionary<string, string>();
-                    continue;
-                }
 
                 int equals = line.IndexOf('=');
 
-                if (current == null || equals < 0)
-                    throw new FormatException($"Bad line in translations.ini: \"{line}\"");
+                if (equals < 0)
+                    throw new FormatException($"Bad line in {fileName}: \"{line}\"");
 
-                current[line[..equals].Trim()] = line[(equals + 1)..].Trim();
+                string value = line[(equals + 1)..].Trim();
+
+                if (value.Length >= 2 && value[0] == '"' && value[^1] == '"')
+                    value = value[1..^1].Replace("\\\"", "\"");
+
+                if (value.Length > 0)
+                    result[line[..equals].Trim()] = value;
             }
 
             return result;
