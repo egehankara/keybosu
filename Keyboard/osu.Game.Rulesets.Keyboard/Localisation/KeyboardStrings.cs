@@ -140,7 +140,7 @@ namespace osu.Game.Rulesets.Keyboard.Localisation
         }
 
         /// <summary>
-        /// Reads one translation file: <c>key = text</c> lines; <c>#</c> or <c>;</c> starts a comment.
+        /// Reads one translation file: <c>key = text</c> lines; <c>;</c> (or <c>#</c>) starts a comment. Use <c>;</c>: Crowdin reads <c>#</c> lines as texts.
         /// Values may be wrapped in double quotes (Crowdin can export them that way).
         /// </summary>
         public static Dictionary<string, string> Parse(string text, string fileName = "a translation file")
