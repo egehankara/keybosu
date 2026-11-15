@@ -32,6 +32,9 @@ Any existing osu! beatmap can be played: it is converted automatically.
 - **Judgements** (Great / Ok / Meh / Miss) appear small under the letter of the key you hit, using your skin's own
   graphics (legacy skins: `hit300` / `hit100` / `hit50` / `hit0`).
 - After a **pause**, the same 3-2-1 countdown as osu!mania plays before the map continues.
+- **Follow points** lead from each note to the next, exactly like osu!'s: the same spacing, timing and animation, and
+  your skin's own follow points (classic skins' `followpoint` images, Argon's chevrons, Triangles' dots). Not between
+  keys that touch, across a new combo or around spinners. Can be turned off in the settings.
 - Mods, grouped like osu!'s own:
   - Difficulty reduction: Easy, No Fail, Half Time, Daycore
   - Difficulty increase: Hard Rock, Sudden Death, Perfect, Double Time, Nightcore, Hidden (notes fade out before they are due),

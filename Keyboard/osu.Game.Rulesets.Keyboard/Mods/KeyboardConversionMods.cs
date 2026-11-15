@@ -30,8 +30,6 @@ namespace osu.Game.Rulesets.Keyboard.Mods
 
         public override ModType Type => ModType.Conversion;
 
-        public override double ScoreMultiplier => 1;
-
         // Only one hand can be picked, and the home row already has keys for both hands.
         public override Type[] IncompatibleMods => base.IncompatibleMods.Append(typeof(KeyboardModOneHand)).Append(typeof(KeyboardModHomeRow)).ToArray();
 
@@ -50,8 +48,6 @@ namespace osu.Game.Rulesets.Keyboard.Mods
         public override LocalisableString Description => KeyboardStrings.ModHomeRowDescription;
 
         public override ModType Type => ModType.Conversion;
-
-        public override double ScoreMultiplier => 1;
 
         public override Type[] IncompatibleMods => base.IncompatibleMods.Append(typeof(KeyboardModOneHand)).ToArray();
 

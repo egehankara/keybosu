@@ -15,6 +15,7 @@ namespace osu.Game.Rulesets.Keyboard.Configuration
         HighlightHomeRow,
         Centring,
         ShowJudgements,
+        ShowFollowPoints,
     }
 
     /// <summary>Which point of the keyboard sits exactly in the middle of the screen.</summary>
@@ -50,6 +51,7 @@ namespace osu.Game.Rulesets.Keyboard.Configuration
             SetDefault(KeyboardRulesetSetting.HighlightHomeRow, true);
             SetDefault(KeyboardRulesetSetting.Centring, KeyboardCentring.WholeKeyboard);
             SetDefault(KeyboardRulesetSetting.ShowJudgements, true);
+            SetDefault(KeyboardRulesetSetting.ShowFollowPoints, true);
         }
     }
 }

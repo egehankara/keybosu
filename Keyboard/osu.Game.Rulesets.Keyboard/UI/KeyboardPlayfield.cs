@@ -13,6 +13,7 @@ using osu.Game.Rulesets.Keyboard.Configuration;
 using osu.Game.Rulesets.Keyboard.Mods;
 using osu.Game.Rulesets.Keyboard.Objects;
 using osu.Game.Rulesets.Keyboard.Objects.Drawables;
+using osu.Game.Rulesets.Keyboard.UI.FollowPoints;
 using osu.Game.Rulesets.Objects.Drawables;
 using osu.Game.Rulesets.Scoring;
 using osu.Game.Rulesets.UI;
@@ -59,6 +60,12 @@ namespace osu.Game.Rulesets.Keyboard.UI
         /// </summary>
         public bool IsInUse(KeyDefinition key) => key.Playable && KeyboardLayout.IsUsed(key.Action, OneHand, HomeRowOnly);
 
+        /// <summary>Follow points from every note to the next, as in osu!standard.</summary>
+        public FollowPointRenderer FollowPoints { get; } = new FollowPointRenderer();
+
+        /// <summary>Whether follow points are drawn: a setting, fixed for the whole play like the others.</summary>
+        public bool ShowFollowPoints { get; private set; } = true;
+
         private KeyLabel? spaceLabel;
 
         // One pool per result: a judgement decides which skin graphic to show when it is first loaded,
@@ -76,6 +83,8 @@ namespace osu.Game.Rulesets.Keyboard.UI
                 config.Get<KeyboardType>(KeyboardRulesetSetting.KeyboardType));
 
             bool highlightHomeRow = config.Get<bool>(KeyboardRulesetSetting.HighlightHomeRow);
+
+            ShowFollowPoints = config.Get<bool>(KeyboardRulesetSetting.ShowFollowPoints);
 
             if (config.Get<bool>(KeyboardRulesetSetting.ShowJudgements))
                 NewResult += onNewResult;
@@ -120,6 +129,8 @@ namespace osu.Game.Rulesets.Keyboard.UI
                                     RelativeSizeAxes = Axes.Both,
                                     ChildrenEnumerable = Layout.Keys.Select(k => new KeyBackground(k, Layout, highlightHomeRow, IsInUse(k))),
                                 },
+                                // Under the notes, like osu!standard's.
+                                FollowPoints,
                                 HitObjectContainer,
                                 // Letters above the notes, so a filling square never hides which key it is on.
                                 new Container

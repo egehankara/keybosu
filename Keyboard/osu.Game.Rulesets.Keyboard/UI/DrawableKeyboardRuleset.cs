@@ -27,6 +27,17 @@ namespace osu.Game.Rulesets.Keyboard.UI
 
         protected override Playfield CreatePlayfield() => new KeyboardPlayfield(Mods);
 
+        protected override void LoadComplete()
+        {
+            base.LoadComplete();
+
+            // The playfield knows the keyboard chosen in settings (where each key is) once it has loaded.
+            var playfield = (KeyboardPlayfield)Playfield;
+
+            if (playfield.ShowFollowPoints)
+                playfield.FollowPoints.SetHitObjects(Beatmap.HitObjects, playfield.Layout);
+        }
+
         // After a pause, count down 3-2-1 before play continues - the very same overlay osu!mania and osu!taiko use.
         protected override ResumeOverlay CreateResumeOverlay() => new DelayedResumeOverlay();
 

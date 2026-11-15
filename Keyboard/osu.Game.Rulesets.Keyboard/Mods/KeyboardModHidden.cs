@@ -27,8 +27,6 @@ namespace osu.Game.Rulesets.Keyboard.Mods
 
         public override LocalisableString Description => KeyboardStrings.ModHiddenDescription;
 
-        public override double ScoreMultiplier => 1.06;
-
         // Like osu!standard: the note left visible is the first real note, even when the map starts with a spinner.
         protected override bool IsFirstAdjustableObject(HitObject hitObject) => hitObject is not KeyboardSpinner;
 

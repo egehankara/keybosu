@@ -26,7 +26,7 @@ namespace osu.Game.Rulesets.Keyboard.Tests
         {
             AddStep("show settings", () => Child = section = new KeyboardSettingsSubsection(new KeyboardRuleset()));
             AddUntilStep("loaded", () => section.IsLoaded);
-            AddAssert("five settings in osu!'s current settings style", () => section.ChildrenOfType<SettingsItemV2>().Count() == 5);
+            AddAssert("six settings in osu!'s current settings style", () => section.ChildrenOfType<SettingsItemV2>().Count() == 6);
             AddAssert("feedback button is there and leads to the project", () =>
                 section.ChildrenOfType<SettingsButtonV2>().Single().Enabled.Value && KeyboardRuleset.PROJECT_URL == "https://github.com/egehankara/keybosu");
             AddAssert("layouts are listed most used first", () =>

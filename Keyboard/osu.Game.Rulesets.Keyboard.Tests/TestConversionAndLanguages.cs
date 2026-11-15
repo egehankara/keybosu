@@ -347,7 +347,7 @@ namespace osu.Game.Rulesets.Keyboard.Tests
         public void TestEveryLanguageTranslatesEveryText()
         {
             var keys = KeyboardStrings.AllKeys.ToList();
-            Assert.That(keys, Has.Count.EqualTo(27));
+            Assert.That(keys, Has.Count.EqualTo(29));
 
             foreach (string language in KeyboardStrings.Languages)
             {

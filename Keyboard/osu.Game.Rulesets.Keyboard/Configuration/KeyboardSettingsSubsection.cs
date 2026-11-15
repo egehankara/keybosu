@@ -60,6 +60,12 @@ namespace osu.Game.Rulesets.Keyboard.Configuration
                     HintText = KeyboardStrings.ShowJudgementsTooltip,
                     Current = config.GetBindable<bool>(KeyboardRulesetSetting.ShowJudgements),
                 }),
+                new SettingsItemV2(new FormCheckBox
+                {
+                    Caption = KeyboardStrings.ShowFollowPoints,
+                    HintText = KeyboardStrings.ShowFollowPointsTooltip,
+                    Current = config.GetBindable<bool>(KeyboardRulesetSetting.ShowFollowPoints),
+                }),
                 new SettingsButtonV2
                 {
                     Text = KeyboardStrings.Feedback,

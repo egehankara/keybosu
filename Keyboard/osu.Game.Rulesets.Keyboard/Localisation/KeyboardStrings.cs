@@ -32,6 +32,8 @@ namespace osu.Game.Rulesets.Keyboard.Localisation
         public static LocalisableString CentreBetweenIndexFingers => get(nameof(CentreBetweenIndexFingers));
         public static LocalisableString ShowJudgements => get(nameof(ShowJudgements));
         public static LocalisableString ShowJudgementsTooltip => tooltip(nameof(ShowJudgementsTooltip));
+        public static LocalisableString ShowFollowPoints => get(nameof(ShowFollowPoints));
+        public static LocalisableString ShowFollowPointsTooltip => tooltip(nameof(ShowFollowPointsTooltip));
 
         /// <summary>Appended to every setting's tooltip.</summary>
         public static LocalisableString AppliesNextMap => get(nameof(AppliesNextMap));
