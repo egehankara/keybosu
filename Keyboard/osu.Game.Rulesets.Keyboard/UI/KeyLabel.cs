@@ -27,8 +27,8 @@ namespace osu.Game.Rulesets.Keyboard.UI
         private readonly SpriteText label;
         private float lastUnit;
 
-        public KeyLabel(KeyDefinition key, KeyboardLayout layout, bool highlightHomeRow = false)
-            : this(key.DisplayLabel, key.X, key.Y, key.Width, 1, layout, !key.Playable, key.Action,
+        public KeyLabel(KeyDefinition key, KeyboardLayout layout, bool highlightHomeRow = false, bool inUse = true)
+            : this(key.DisplayLabel, key.X, key.Y, key.Width, 1, layout, !key.Playable || !inUse, key.Action,
                 highlightHomeRow && KeyboardLayout.HOME_ROW.Contains(key.Action))
         {
         }

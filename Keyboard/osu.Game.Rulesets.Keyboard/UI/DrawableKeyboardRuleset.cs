@@ -25,7 +25,7 @@ namespace osu.Game.Rulesets.Keyboard.UI
         {
         }
 
-        protected override Playfield CreatePlayfield() => new KeyboardPlayfield();
+        protected override Playfield CreatePlayfield() => new KeyboardPlayfield(Mods);
 
         // After a pause, count down 3-2-1 before play continues - the very same overlay osu!mania and osu!taiko use.
         protected override ResumeOverlay CreateResumeOverlay() => new DelayedResumeOverlay();

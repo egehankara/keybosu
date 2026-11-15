@@ -32,8 +32,14 @@ Any existing osu! beatmap can be played: it is converted automatically.
 - **Judgements** (Great / Ok / Meh / Miss) appear small under the letter of the key you hit, using your skin's own
   graphics (legacy skins: `hit300` / `hit100` / `hit50` / `hit0`).
 - After a **pause**, the same 3-2-1 countdown as osu!mania plays before the map continues.
-- Mods: Autoplay, NoFail, HalfTime, DoubleTime, Original Density. Input is read by physical key position, so your OS keyboard
-  language does not matter.
+- Mods, grouped like osu!'s own:
+  - Difficulty reduction: Easy, No Fail, Half Time, Daycore
+  - Difficulty increase: Hard Rock, Sudden Death, Perfect, Double Time, Nightcore, Hidden (notes fade out before they are due),
+    Original Density
+  - Conversion: Difficulty Adjust, Mirror (the keyboard flipped left to right), Left Hand and Right Hand (every note on one half), Home Row (every note on the eight keys your fingers rest on)
+  - Automation: Autoplay, Cinema
+  - Fun: Wind Up, Wind Down, Muted
+- Input is read by physical key position, so your OS keyboard language does not matter.
 
 ![A spinner on the Space bar: a circle grows out from the middle while Space is held](docs/images/spinner.png)
 

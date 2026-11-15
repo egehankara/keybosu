@@ -110,6 +110,13 @@ namespace osu.Game.Rulesets.Keyboard
         SpanishLatinAmerica,
     }
 
+    /// <summary>One of the two hands, for the one-handed mods.</summary>
+    public enum KeyboardHand
+    {
+        Left,
+        Right,
+    }
+
     /// <summary>The physical shape of the keyboard: picked in settings.</summary>
     public enum KeyboardType
     {
@@ -290,6 +297,29 @@ namespace osu.Game.Rulesets.Keyboard
         {
             KeyboardAction.F, KeyboardAction.J,
         };
+
+        /// <summary>
+        /// The keys touch typing gives the left hand: the first five keys of each letter row (Q-T, A-G, Z-B), by physical
+        /// position so it is right in every layout. Every other letter and punctuation key belongs to the right hand.
+        /// </summary>
+        public static readonly IReadOnlyCollection<KeyboardAction> LEFT_HAND = new HashSet<KeyboardAction>
+        {
+            KeyboardAction.Q, KeyboardAction.W, KeyboardAction.E, KeyboardAction.R, KeyboardAction.T,
+            KeyboardAction.A, KeyboardAction.S, KeyboardAction.D, KeyboardAction.F, KeyboardAction.G,
+            KeyboardAction.Z, KeyboardAction.X, KeyboardAction.C, KeyboardAction.V, KeyboardAction.B,
+        };
+
+        /// <summary>Which hand presses a letter or punctuation key in touch typing (Space is pressed with a thumb of either).</summary>
+        public static KeyboardHand HandFor(KeyboardAction action) => LEFT_HAND.Contains(action) ? KeyboardHand.Left : KeyboardHand.Right;
+
+        /// <summary>
+        /// Whether a key is used when the map is limited to one hand (Left Hand / Right Hand) or to the home row (Home Row).
+        /// Beatmap conversion only puts notes on keys that are used, and the playfield draws the others dim.
+        /// Space is always used: spinners stay on it.
+        /// </summary>
+        public static bool IsUsed(KeyboardAction action, KeyboardHand? oneHand, bool homeRowOnly)
+            => action == KeyboardAction.Space
+               || ((oneHand == null || HandFor(action) == oneHand) && (!homeRowOnly || HOME_ROW.Contains(action)));
 
         public bool Contains(KeyboardAction action) => byAction.ContainsKey(action);
 

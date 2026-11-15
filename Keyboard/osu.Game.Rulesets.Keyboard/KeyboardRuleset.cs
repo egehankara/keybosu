@@ -46,18 +46,56 @@ namespace osu.Game.Rulesets.Keyboard
         public override DifficultyCalculator CreateDifficultyCalculator(IWorkingBeatmap beatmap) =>
             new KeyboardDifficultyCalculator(RulesetInfo, beatmap);
 
+        // Grouped and ordered like osu!standard's own mod list.
         public override IEnumerable<Mod> GetModsFor(ModType type)
         {
             switch (type)
             {
                 case ModType.DifficultyReduction:
-                    return new Mod[] { new KeyboardModNoFail(), new KeyboardModHalfTime() };
+                    return new Mod[]
+                    {
+                        new KeyboardModEasy(),
+                        new KeyboardModNoFail(),
+                        new KeyboardModHalfTime(),
+                        new KeyboardModDaycore(),
+                    };
 
                 case ModType.DifficultyIncrease:
-                    return new Mod[] { new KeyboardModDoubleTime(), new KeyboardModOriginalDensity() };
+                    return new Mod[]
+                    {
+                        new KeyboardModHardRock(),
+                        new KeyboardModSuddenDeath(),
+                        new KeyboardModPerfect(),
+                        new KeyboardModDoubleTime(),
+                        new KeyboardModNightcore(),
+                        new KeyboardModHidden(),
+                        new KeyboardModOriginalDensity(),
+                    };
+
+                case ModType.Conversion:
+                    return new Mod[]
+                    {
+                        new KeyboardModDifficultyAdjust(),
+                        new KeyboardModMirror(),
+                        new KeyboardModLeftHand(),
+                        new KeyboardModRightHand(),
+                        new KeyboardModHomeRow(),
+                    };
 
                 case ModType.Automation:
-                    return new Mod[] { new KeyboardModAutoplay() };
+                    return new Mod[]
+                    {
+                        new KeyboardModAutoplay(),
+                        new KeyboardModCinema(),
+                    };
+
+                case ModType.Fun:
+                    return new Mod[]
+                    {
+                        new KeyboardModWindUp(),
+                        new KeyboardModWindDown(),
+                        new KeyboardModMuted(),
+                    };
 
                 default:
                     return Array.Empty<Mod>();

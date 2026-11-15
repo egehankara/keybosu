@@ -9,6 +9,7 @@ using osu.Game.Audio;
 using osu.Game.Beatmaps;
 using osu.Game.Beatmaps.Legacy;
 using osu.Game.Rulesets.Keyboard.Objects;
+using osu.Game.Rulesets.Mods;
 using osu.Game.Rulesets.Objects;
 using osu.Game.Rulesets.Objects.Legacy;
 using osu.Game.Rulesets.Objects.Types;
@@ -43,14 +44,17 @@ namespace osu.Game.Rulesets.Keyboard.Beatmaps
 
         private readonly KeyboardLayout layout = KeyboardLayout.Default;
 
-        /// <summary>Keys notes can land on: every playable key except Space (Space is only for spinners).</summary>
-        private readonly KeyDefinition[] noteKeys;
+        /// <summary>
+        /// Keys notes can land on: every playable key except Space (Space is only for spinners), or only one hand's keys
+        /// with <see cref="OneHand"/>. Worked out when conversion starts, once the mods have set the options.
+        /// </summary>
+        private KeyDefinition[] noteKeys = Array.Empty<KeyDefinition>();
 
         /// <summary>
         /// The rectangle, in key units, covered by <see cref="noteKeys"/>. osu! positions are stretched over this area
         /// only, so the bottom of the osu! playfield maps to the bottom letter row rather than to the empty Space row.
         /// </summary>
-        private readonly float areaLeft, areaTop, areaWidth, areaHeight;
+        private float areaLeft, areaTop, areaWidth, areaHeight;
         private readonly Dictionary<KeyboardAction, SortedSet<double>> usedTimes = new Dictionary<KeyboardAction, SortedSet<double>>();
 
         /// <summary>Notes closer together than half a beat are thinned out, as long as that is within these limits (in ms).</summary>
@@ -70,6 +74,8 @@ namespace osu.Game.Rulesets.Keyboard.Beatmaps
         /// <summary>The hardest keys to reach: the first key of every row and the last two, which are mostly punctuation.</summary>
         private readonly HashSet<KeyboardAction> edgeKeys;
 
+        private bool setUp;
+
         /// <summary>Every note of the map; which ones stay and what key they use is decided once all of them are known.</summary>
         private readonly List<NoteCandidate> candidates = new List<NoteCandidate>();
 
@@ -79,24 +85,53 @@ namespace osu.Game.Rulesets.Keyboard.Beatmaps
         /// <summary>Keeps every note, the map's own approach speed and every key, instead of the easier default.</summary>
         public bool OriginalDensity { get; set; }
 
+        /// <summary>Flips the map left to right, so notes on the left side of the map land on the right side of the keyboard.</summary>
+        public bool Mirror { get; set; }
+
+        /// <summary>Puts every note on one hand's keys (the whole map squeezed onto that half), or on both hands when null.</summary>
+        public KeyboardHand? OneHand { get; set; }
+
+        /// <summary>
+        /// Puts every note on the home row, the eight keys the fingers rest on (<see cref="KeyboardLayout.HOME_ROW"/>).
+        /// Each of them is under a finger, so none of them is avoided as an edge key.
+        /// </summary>
+        public bool HomeRowOnly { get; set; }
+
+        /// <summary>
+        /// Mods that change the map's difficulty (Easy, Hard Rock, Difficulty Adjust). osu! applies them only after conversion,
+        /// but conversion needs the approach rate they lead to: it decides how long a key stays busy with a note.
+        /// </summary>
+        public List<IApplicableToDifficulty> DifficultyMods { get; } = new List<IApplicableToDifficulty>();
+
         public KeyboardBeatmapConverter(IBeatmap beatmap, Ruleset ruleset)
             : base(beatmap, ruleset)
         {
-            noteKeys = layout.Keys.Where(k => k.Playable && k.Action != KeyboardAction.Space).ToArray();
+            // The hardest keys stay the same whatever the options: the first key of every full row and its last two.
+            edgeKeys = layout.Keys.Where(k => k.Playable && k.Action != KeyboardAction.Space)
+                             .GroupBy(k => k.Y)
+                             .SelectMany(row =>
+                             {
+                                 var keys = row.OrderBy(k => k.X).ToList();
+                                 return keys.Take(1).Concat(keys.TakeLast(2));
+                             })
+                             .Select(k => k.Action)
+                             .ToHashSet();
+        }
+
+        private void setUpKeys()
+        {
+            if (setUp)
+                return;
+
+            setUp = true;
+
+            noteKeys = layout.Keys.Where(k => k.Playable && k.Action != KeyboardAction.Space && KeyboardLayout.IsUsed(k.Action, OneHand, HomeRowOnly))
+                             .ToArray();
 
             areaLeft = noteKeys.Min(k => k.X);
             areaTop = noteKeys.Min(k => k.Y);
             areaWidth = noteKeys.Max(k => k.X + k.Width) - areaLeft;
             areaHeight = noteKeys.Max(k => k.Y + 1) - areaTop;
-
-            edgeKeys = noteKeys.GroupBy(k => k.Y)
-                               .SelectMany(row =>
-                               {
-                                   var keys = row.OrderBy(k => k.X).ToList();
-                                   return keys.Take(1).Concat(keys.TakeLast(2));
-                               })
-                               .Select(k => k.Action)
-                               .ToHashSet();
         }
 
         public override bool CanConvert() => true;
@@ -105,9 +140,12 @@ namespace osu.Game.Rulesets.Keyboard.Beatmaps
 
         protected override IEnumerable<KeyboardHitObject> ConvertHitObject(HitObject original, IBeatmap beatmap, CancellationToken cancellationToken)
         {
-            // A note starts filling TimePreempt before it is due (same formula as KeyboardHitObject).
+            setUpKeys();
+
+            // A note starts filling TimePreempt before it is due (same formula as KeyboardHitObject), at the approach rate
+            // the difficulty mods will set.
             sameKeyGap ??= Math.Max(min_same_key_gap,
-                KeyboardHitObject.ApproachTime(beatmap.Difficulty.ApproachRate, OriginalDensity) + KeyboardHitObject.SAME_KEY_CLEARANCE);
+                KeyboardHitObject.ApproachTime(approachRateAfterMods(beatmap), OriginalDensity) + KeyboardHitObject.SAME_KEY_CLEARANCE);
 
             currentObject++;
             currentNoteGap = Math.Clamp(beatmap.ControlPointInfo.TimingPointAt(original.StartTime).BeatLength * note_gap_beats, min_note_gap, max_note_gap);
@@ -161,6 +199,16 @@ namespace osu.Game.Rulesets.Keyboard.Beatmaps
             yield return withCombo(create(original.StartTime, original.Samples, target(startPosition, hasPosition, original.StartTime)), original);
         }
 
+        private float approachRateAfterMods(IBeatmap beatmap)
+        {
+            var difficulty = new BeatmapDifficulty(beatmap.Difficulty);
+
+            foreach (var mod in DifficultyMods)
+                mod.ApplyToDifficulty(difficulty);
+
+            return difficulty.ApproachRate;
+        }
+
         /// <summary>
         /// Whether a long object is an osu!mania hold note. Maps read from a .osu file are not mania objects yet: their holds
         /// only say so in the object type from the file.
@@ -183,6 +231,8 @@ namespace osu.Game.Rulesets.Keyboard.Beatmaps
 
         protected override Beatmap<KeyboardHitObject> ConvertBeatmap(IBeatmap original, CancellationToken cancellationToken)
         {
+            setUpKeys();
+
             var beatmap = base.ConvertBeatmap(original, cancellationToken);
 
             var removed = OriginalDensity ? new HashSet<KeyboardHitObject>() : thinOut();
@@ -266,6 +316,9 @@ namespace osu.Game.Rulesets.Keyboard.Beatmaps
                 ? new Vector2(position.X / osu_width, position.Y / osu_height)
                 : new Vector2((float)RandomFor(time, 1), (float)RandomFor(time, 2));
 
+            if (Mirror)
+                fraction.X = 1 - fraction.X;
+
             return new Vector2(areaLeft + fraction.X * areaWidth, areaTop + fraction.Y * areaHeight);
         }
 
@@ -286,7 +339,7 @@ namespace osu.Game.Rulesets.Keyboard.Beatmaps
             var byDistance = noteKeys.OrderBy(k => Vector2.DistanceSquared(k.Centre, target)).ToList();
 
             // Most notes stay away from the edges. The same note gets the same answer on every play.
-            bool edgesAllowed = OriginalDensity || RandomFor(time, 0) < edge_note_chance;
+            bool edgesAllowed = OriginalDensity || HomeRowOnly || RandomFor(time, 0) < edge_note_chance;
 
             // Moving away from an edge stays on the same row as much as possible, so it is a short sideways move.
             var preferred = edgesAllowed
@@ -297,14 +350,24 @@ namespace osu.Game.Rulesets.Keyboard.Beatmaps
 
             KeyDefinition? firstFree(IEnumerable<KeyDefinition> keys) => keys.Cast<KeyDefinition?>().FirstOrDefault(k => isFree(k!.Value.Action, time));
 
-            // Nearest key that has not been used around this time; if every key is busy, just take the nearest.
-            var chosen = firstFree(preferred) ?? firstFree(byDistance) ?? byDistance[0];
+            // Nearest key that has not been used around this time. If every key is busy (dense maps on few keys, like Home Row),
+            // the one that has been free the longest: the note then appears as little late as possible.
+            var chosen = firstFree(preferred) ?? firstFree(byDistance) ?? byDistance.OrderBy(k => lastUseBefore(k.Action, time)).First();
 
             if (!usedTimes.TryGetValue(chosen.Action, out var set))
                 usedTimes[chosen.Action] = set = new SortedSet<double>();
 
             set.Add(time);
             return chosen.Action;
+        }
+
+        private double lastUseBefore(KeyboardAction action, double time)
+        {
+            if (!usedTimes.TryGetValue(action, out var set))
+                return double.NegativeInfinity;
+
+            var before = set.GetViewBetween(double.NegativeInfinity, time);
+            return before.Count > 0 ? before.Max : double.NegativeInfinity;
         }
 
         private bool isFree(KeyboardAction action, double time)

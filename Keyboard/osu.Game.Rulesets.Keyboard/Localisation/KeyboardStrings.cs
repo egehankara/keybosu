@@ -44,6 +44,12 @@ namespace osu.Game.Rulesets.Keyboard.Localisation
 
         // Mods
         public static LocalisableString ModOriginalDensityDescription => get(nameof(ModOriginalDensityDescription));
+        public static LocalisableString ModEasyDescription => get(nameof(ModEasyDescription));
+        public static LocalisableString ModHiddenDescription => get(nameof(ModHiddenDescription));
+        public static LocalisableString ModMirrorDescription => get(nameof(ModMirrorDescription));
+        public static LocalisableString ModLeftHandDescription => get(nameof(ModLeftHandDescription));
+        public static LocalisableString ModRightHandDescription => get(nameof(ModRightHandDescription));
+        public static LocalisableString ModHomeRowDescription => get(nameof(ModHomeRowDescription));
 
         // Key bindings panel
         public static LocalisableString KeyBindingsHint => get(nameof(KeyBindingsHint));

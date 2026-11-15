@@ -164,8 +164,10 @@ namespace osu.Game.Rulesets.Keyboard.Tests
             double normal = calculator.Calculate().StarRating;
             double doubleTime = calculator.Calculate(new osu.Game.Rulesets.Mods.Mod[] { new osu.Game.Rulesets.Keyboard.Mods.KeyboardModDoubleTime() }).StarRating;
             double halfTime = calculator.Calculate(new osu.Game.Rulesets.Mods.Mod[] { new osu.Game.Rulesets.Keyboard.Mods.KeyboardModHalfTime() }).StarRating;
+            double nightcore = calculator.Calculate(new osu.Game.Rulesets.Mods.Mod[] { new osu.Game.Rulesets.Keyboard.Mods.KeyboardModNightcore() }).StarRating;
 
             Assert.That(doubleTime, Is.GreaterThan(normal));
+            Assert.That(nightcore, Is.EqualTo(doubleTime));
             Assert.That(halfTime, Is.LessThan(normal));
         }
 
@@ -345,7 +347,7 @@ namespace osu.Game.Rulesets.Keyboard.Tests
         public void TestEveryLanguageTranslatesEveryText()
         {
             var keys = KeyboardStrings.AllKeys.ToList();
-            Assert.That(keys, Has.Count.EqualTo(21));
+            Assert.That(keys, Has.Count.EqualTo(27));
 
             foreach (string language in KeyboardStrings.Languages)
             {

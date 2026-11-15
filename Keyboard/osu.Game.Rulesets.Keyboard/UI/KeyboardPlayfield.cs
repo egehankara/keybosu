@@ -2,12 +2,15 @@
 // See the LICENCE file in the repository root for full licence text.
 
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using osu.Framework.Allocation;
 using osu.Framework.Graphics;
 using osu.Framework.Graphics.Containers;
 using osu.Game.Rulesets.Judgements;
+using osu.Game.Rulesets.Mods;
 using osu.Game.Rulesets.Keyboard.Configuration;
+using osu.Game.Rulesets.Keyboard.Mods;
 using osu.Game.Rulesets.Keyboard.Objects;
 using osu.Game.Rulesets.Keyboard.Objects.Drawables;
 using osu.Game.Rulesets.Objects.Drawables;
@@ -37,6 +40,24 @@ namespace osu.Game.Rulesets.Keyboard.UI
         public KeyboardLayout Layout { get; private set; } = KeyboardLayout.Default;
 
         private readonly Container judgementLayer = new Container { RelativeSizeAxes = Axes.Both };
+
+        /// <summary>The hand the map is limited to by Left Hand / Right Hand, or null.</summary>
+        public KeyboardHand? OneHand { get; }
+
+        /// <summary>Whether the map is limited to the home row by Home Row.</summary>
+        public bool HomeRowOnly { get; }
+
+        public KeyboardPlayfield(IReadOnlyList<Mod>? mods = null)
+        {
+            OneHand = mods?.OfType<KeyboardModOneHand>().FirstOrDefault()?.Hand;
+            HomeRowOnly = mods?.OfType<KeyboardModHomeRow>().Any() == true;
+        }
+
+        /// <summary>
+        /// Whether notes can land on a key in this play. Keys they never land on are drawn dim, like the keys only some
+        /// keyboards have: the extra key of this keyboard type, and keys a mod leaves out (Left Hand, Right Hand, Home Row).
+        /// </summary>
+        public bool IsInUse(KeyDefinition key) => key.Playable && KeyboardLayout.IsUsed(key.Action, OneHand, HomeRowOnly);
 
         private KeyLabel? spaceLabel;
 
@@ -97,7 +118,7 @@ namespace osu.Game.Rulesets.Keyboard.UI
                                 new Container
                                 {
                                     RelativeSizeAxes = Axes.Both,
-                                    ChildrenEnumerable = Layout.Keys.Select(k => new KeyBackground(k, Layout, highlightHomeRow)),
+                                    ChildrenEnumerable = Layout.Keys.Select(k => new KeyBackground(k, Layout, highlightHomeRow, IsInUse(k))),
                                 },
                                 HitObjectContainer,
                                 // Letters above the notes, so a filling square never hides which key it is on.
@@ -113,8 +134,8 @@ namespace osu.Game.Rulesets.Keyboard.UI
                                 new Container
                                 {
                                     RelativeSizeAxes = Axes.Both,
-                                    // The dimmed extra keys never get notes, so pressing them shows nothing either.
-                                    ChildrenEnumerable = Layout.Keys.Where(k => k.Playable).Select(k => new KeyPressHighlight(k, Layout)),
+                                    // The dimmed keys never get notes, so pressing them shows nothing either.
+                                    ChildrenEnumerable = Layout.Keys.Where(IsInUse).Select(k => new KeyPressHighlight(k, Layout)),
                                 },
                             }
                         }
@@ -125,7 +146,7 @@ namespace osu.Game.Rulesets.Keyboard.UI
 
         private KeyLabel createLabel(KeyDefinition key, bool highlightHomeRow)
         {
-            var label = new KeyLabel(key, Layout, highlightHomeRow);
+            var label = new KeyLabel(key, Layout, highlightHomeRow, IsInUse(key));
 
             if (key.Action == KeyboardAction.Space)
                 spaceLabel = label;

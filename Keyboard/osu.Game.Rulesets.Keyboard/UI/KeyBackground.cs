@@ -31,8 +31,11 @@ namespace osu.Game.Rulesets.Keyboard.UI
         /// <summary>Whether this key has the index-finger bump (always on F and J, like a real keyboard).</summary>
         public bool HasBump { get; }
 
-        public KeyBackground(KeyDefinition key, KeyboardLayout layout, bool highlightHomeRow = false)
-            : this(key.X, key.Y, key.Width, 1, layout, !key.Playable, key.Action,
+        /// <summary>Whether this key is drawn dim, because notes never land on it.</summary>
+        public bool IsDimmed { get; }
+
+        public KeyBackground(KeyDefinition key, KeyboardLayout layout, bool highlightHomeRow = false, bool inUse = true)
+            : this(key.X, key.Y, key.Width, 1, layout, !key.Playable || !inUse, key.Action,
                 highlightHomeRow && KeyboardLayout.HOME_ROW.Contains(key.Action),
                 KeyboardLayout.INDEX_FINGER_BUMPS.Contains(key.Action))
         {
@@ -47,6 +50,7 @@ namespace osu.Game.Rulesets.Keyboard.UI
                               KeyboardAction? action, bool homeRow, bool bump)
         {
             Action = action;
+            IsDimmed = dim;
             IsHomeRowHighlighted = homeRow;
             HasBump = bump;
 
