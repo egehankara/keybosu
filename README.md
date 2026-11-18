@@ -10,7 +10,7 @@
 coloured squares grow inside the keys of an on-screen keyboard, and you press each key the moment its square is full.
 Every osu! beatmap you already have works: it is converted automatically.
 
-![keybosu! gameplay: coloured squares growing inside the keys of an on-screen keyboard, with follow points leading from one note to the next](docs/images/gameplay.png)
+![keybosu! gameplay: coloured squares growing inside the keys of an on-screen keyboard, with follow points leading from one note to the next](docs/images/gameplay.webp)
 
 **[Download the latest release](../../releases/latest)** · [Install](#install) · [Türkçe](#türkçe)
 
@@ -68,6 +68,8 @@ If you still have a very old `osu.Game.Rulesets.Keyboard.dll` in that folder, de
 ## Settings
 
 Under *Settings → Ruleset → keybosu!*. They apply the next time a map starts.
+
+![keybosu!'s settings in osu!lazer: keyboard layout, keyboard type, screen centre and three switches](docs/images/settings.png)
 
 | Setting | What it does |
 |---|---|
