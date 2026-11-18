@@ -1,4 +1,10 @@
-# keybosu!
+<h1>
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/images/logo-white.svg">
+    <img src="docs/images/logo-black.svg" alt="keybosu! logo" height="40">
+  </picture>
+  keybosu!
+</h1>
 
 **Your whole keyboard is the playfield.** keybosu! is a game mode (ruleset) for [osu!lazer](https://github.com/ppy/osu):
 coloured squares grow inside the keys of an on-screen keyboard, and you press each key the moment its square is full.

@@ -130,18 +130,30 @@ namespace osu.Game.Rulesets.Keyboard
         public override Drawable CreateIcon() => new Icon();
 
         /// <summary>
-        /// The ruleset icon, matching osu!'s own ruleset icons: a thick white ring with a solid white shape inside -
-        /// here a key (a square with soft corners). Drawn at a fixed size; lazer scales it to wherever it is shown.
+        /// The ruleset icon, matching osu!'s own ruleset icons: a thick white frame with a white shape inside -
+        /// here a square frame with soft corners around a solid key. Drawn at a fixed size; lazer scales it to wherever it is shown.
         /// </summary>
         public partial class Icon : CompositeDrawable
         {
             public const float SIZE = 100;
 
-            /// <summary>Ring thickness as a share of the icon's size, measured from osu!'s own ruleset icons.</summary>
-            public const float RING_THICKNESS = 0.13f;
+            /// <summary>Frame thickness as a share of the icon's size, measured from osu!'s own ruleset icons.</summary>
+            public const float FRAME_THICKNESS = 0.13f;
 
-            /// <summary>Size of the key inside, as a share of the icon's size.</summary>
-            public const float KEY_SIZE = 0.4f;
+            /// <summary>
+            /// Corner radius of the inside edge of the frame, as a share of the icon's size.
+            /// The outer corner is this plus the frame thickness, so both corners share one centre (concentric corners).
+            /// </summary>
+            public const float INNER_CORNER_RADIUS = 0.044f;
+
+            /// <summary>Size of the solid key in the middle, as a share of the icon's size.</summary>
+            public const float KEY_SIZE = 0.44f;
+
+            /// <summary>
+            /// The outer frame's corner radius as a share of its size. The key uses the same share,
+            /// so both squares have the same shape at different sizes.
+            /// </summary>
+            public const float CORNER_SHARE = INNER_CORNER_RADIUS + FRAME_THICKNESS;
 
             private KeyBindingPanel? panelAwaitingWarning;
             private KeyBindingPanel? panelAwaitingEditorCleanup;
@@ -169,28 +181,16 @@ namespace osu.Game.Rulesets.Keyboard
 
                 InternalChildren = new Drawable[]
                 {
-                    // Outer ring
-                    new CircularContainer
-                    {
-                        RelativeSizeAxes = Axes.Both,
-                        Masking = true,
-                        BorderThickness = SIZE * RING_THICKNESS,
-                        BorderColour = Color4.White,
-                        Child = new Box
-                        {
-                            RelativeSizeAxes = Axes.Both,
-                            Alpha = 0,
-                            AlwaysPresent = true,
-                        },
-                    },
-                    // The key: a solid white square with soft corners
+                    // The frame: a rounded square outline. The inside corner follows from the outer one minus the thickness.
+                    outline(SIZE, FRAME_THICKNESS),
+                    // The key
                     new Container
                     {
                         Anchor = Anchor.Centre,
                         Origin = Anchor.Centre,
                         Size = new Vector2(SIZE * KEY_SIZE),
                         Masking = true,
-                        CornerRadius = SIZE * KEY_SIZE * 0.22f,
+                        CornerRadius = SIZE * KEY_SIZE * CORNER_SHARE,
                         Child = new Box
                         {
                             RelativeSizeAxes = Axes.Both,
@@ -199,6 +199,24 @@ namespace osu.Game.Rulesets.Keyboard
                     },
                 };
             }
+
+            /// <summary>A white rounded square outline of the given size, with its corners in <see cref="CORNER_SHARE"/>.</summary>
+            private static Container outline(float size, float thickness) => new Container
+            {
+                Anchor = Anchor.Centre,
+                Origin = Anchor.Centre,
+                Size = new Vector2(size),
+                Masking = true,
+                CornerRadius = size * CORNER_SHARE,
+                BorderThickness = SIZE * thickness,
+                BorderColour = Color4.White,
+                Child = new Box
+                {
+                    RelativeSizeAxes = Axes.Both,
+                    Alpha = 0,
+                    AlwaysPresent = true,
+                },
+            };
         }
 
         // Leave this line intact. It will bake the correct version into the ruleset on each build/release.
