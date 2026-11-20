@@ -14,6 +14,8 @@ Every osu! beatmap you already have works: it is converted automatically.
 
 **[Download the latest release](../../releases/latest)** · [Install](#install) · [Türkçe](#türkçe)
 
+▶️ Watch it in action: [gameplay video](https://youtu.be/TPU9UsV1yOU) · [second video](https://youtu.be/KfI2sbvGv0E)
+
 ## How to play
 
 - A square grows inside a key. **Press that key when the square fills it.** The square brightens as the moment comes
@@ -152,6 +154,7 @@ büyür; kare tuşu doldurduğu anda o tuşa basarsın. Elindeki bütün osu! ha
 - **Modlar:** osu!'daki modlar aynı gruplarda (Easy, Hard Rock, Double Time, Nightcore, Hidden, Sudden Death...).
   keybosu!'ya özel olanlar: **Original Density** (haritanın bütün notaları), **Left Hand / Right Hand** (tek elle),
   **Home Row** (sadece parmakların durduğu sekiz tuş) ve **Mirror**.
+- **Videolar:** [Oynanış videosu](https://youtu.be/TPU9UsV1yOU) · [İkinci video](https://youtu.be/KfI2sbvGv0E)
 - **Kurulum:** [Son sürümden](../../releases/latest) `osu.Game.Rulesets.Keybosu.dll` dosyasını indir, osu!lazer veri
   klasöründeki `rulesets` klasörüne koy (Windows: `%AppData%\osu\rulesets\`, Linux: `~/.local/share/osu/rulesets/`),
   oyunu yeniden başlat.
